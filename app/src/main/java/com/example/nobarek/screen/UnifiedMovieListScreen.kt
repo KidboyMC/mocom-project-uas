@@ -1,20 +1,6 @@
-package com.example.nobarek.screen
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -22,19 +8,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +24,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 
 // DATA MODELS
@@ -58,20 +37,27 @@ data class MovieResult(
 
 // MAIN SCREEN
 @Composable
-fun SearchResultScreen(
-    initialQuery: String,
+fun UnifiedMovieListScreen(
+    initialQuery: String = "", // Default is empty for "Movie List" mode
     results: List<MovieResult>,
     totalResults: Int,
-    onMovieClick: (Int) -> Unit
+    onMovieClick: (Int) -> Unit,
+    onSearchTriggered: (String) -> Unit // Callback when enter is pressed
 ) {
-    // State for search text field
+    // Search State
     var searchQuery by remember { mutableStateOf(initialQuery) }
     val focusManager = LocalFocusManager.current
+
+    // Dynamic Logic Title:
+    // If searchQuery is not empty -> Search Mode
+    // If searchQuery is empty -> Movie List Mode (View All)
+    val isSearchMode = searchQuery.isNotEmpty()
+    val pageTitle = if (isSearchMode) "Search Results: $searchQuery" else "Movie List"
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFEAEAEA))
+            .background(Color(0xFFEEEEEE))
             .padding(top = 64.dp, start = 16.dp, end = 16.dp)
             .navigationBarsPadding()
     ) {
@@ -81,27 +67,39 @@ fun SearchResultScreen(
             onQueryChange = { searchQuery = it },
             onSearch = {
                 focusManager.clearFocus()
+                onSearchTriggered(searchQuery)
             }
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Title Section
-        Text(
-            text = "Search Results: $initialQuery",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
+        // Title & Sort Section
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Page Title
+            Text(
+                text = pageTitle,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+
+            // Filter/Sort Row (Only appears if NOT in search mode)
+            if (!isSearchMode) {
+                Spacer(modifier = Modifier.height(16.dp))
+                SortFilterRow()
+            }
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Grid Content (Dynamic)
+        // Grid Content
         Box(modifier = Modifier.weight(1f)) {
             if (results.isEmpty()) {
                 Text(
-                    text = "No results found.",
+                    text = if (isSearchMode) "No results found for \"$searchQuery\"" else "No movies available.",
                     modifier = Modifier.align(Alignment.Center),
                     color = Color.Gray
                 )
@@ -118,8 +116,11 @@ fun SearchResultScreen(
                 }
             }
         }
-        val totalPages = if (totalResults > 0) (totalResults + 6 - 1) / 6 else 1
+
         // Pagination Footer
+        val itemsPerPage = 6
+        val totalPages = if (totalResults > 0) (totalResults + itemsPerPage - 1) / itemsPerPage else 1
+
         PaginationFooter(
             currentPage = 1,
             totalPages = totalPages,
@@ -131,24 +132,44 @@ fun SearchResultScreen(
     }
 }
 
+// SUB-COMPONENTS
+
+@Composable
+fun SortFilterRow() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Text(text = "Sort By:", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+        Spacer(modifier = Modifier.width(8.dp))
+
+        SortChip(text = "Name (A - Z)")
+        Spacer(modifier = Modifier.width(8.dp))
+        SortChip(text = "All Genre")
+    }
+}
+
+@Composable
+fun SortChip(text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.clickable { /* Handle Sort Click */ }
+    ) {
+        Text(text = text, fontSize = 12.sp, color = Color.Gray)
+        Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.Gray)
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onSearch: () -> Unit
-) {
+fun SearchBar(query: String, onQueryChange: (String) -> Unit, onSearch: () -> Unit) {
     TextField(
         value = query,
         onValueChange = onQueryChange,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .clip(RoundedCornerShape(50.dp)),
+        modifier = Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(50.dp)),
         placeholder = { Text("Search movies...") },
-        trailingIcon = {
-            Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.Black)
-        },
+        trailingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Black) },
         colors = TextFieldDefaults.colors(
             focusedContainerColor = Color(0xFFE0E0E0),
             unfocusedContainerColor = Color(0xFFE0E0E0),
@@ -168,8 +189,8 @@ fun MovieGridItem(movie: MovieResult, onClick: () -> Unit) {
         modifier = Modifier
             .width(150.dp)
             .clickable { onClick() }
+        , horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Poster Image
         AsyncImage(
             model = movie.posterUrl,
             contentDescription = movie.title,
@@ -179,7 +200,6 @@ fun MovieGridItem(movie: MovieResult, onClick: () -> Unit) {
                 .height(220.dp)
                 .clip(RoundedCornerShape(12.dp))
         )
-
         Spacer(modifier = Modifier.height(8.dp))
 
         // Title
@@ -187,16 +207,18 @@ fun MovieGridItem(movie: MovieResult, onClick: () -> Unit) {
             text = movie.title,
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold,
-            maxLines = 1
+            maxLines = 1,
         )
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Rating
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        // Rating Row
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Icon(
                 imageVector = Icons.Default.Star,
-                contentDescription = "Rating",
+                contentDescription = null,
                 tint = Color(0xFFFFC107),
                 modifier = Modifier.size(16.dp)
             )
@@ -211,73 +233,33 @@ fun MovieGridItem(movie: MovieResult, onClick: () -> Unit) {
 }
 
 @Composable
-fun PaginationFooter(
-    currentPage: Int,
-    totalPages: Int,
-    currentCount: Int,
-    totalCount: Int
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Showing $currentCount of $totalCount",
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.Gray
-        )
-
+fun PaginationFooter(currentPage: Int, totalPages: Int, currentCount: Int, totalCount: Int) {
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = "Showing $currentCount of $totalCount", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
         Spacer(modifier = Modifier.height(8.dp))
-
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .background(Color(0xFFFFC107), shape = RoundedCornerShape(4.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = currentPage.toString(),
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PageBox(number = currentPage, isSelected = true)
+            if (totalPages > 1) PageBox(number = currentPage + 1, isSelected = false)
+            if (totalPages > 2) PageBox(number = currentPage + 2, isSelected = false)
+            if (totalPages > 3) Text("...", modifier = Modifier.align(Alignment.Bottom))
+            if (totalPages > 3) PageBox(number = totalPages, isSelected = false)
         }
     }
 }
 
-// PREVIEW
-@Preview(showBackground = true)
 @Composable
-fun PreviewPaginationLogic() {
-    Column {
-        // Case 1: (Showing 6 of 20)
-        // Let's say 'results' contains only 6 items (because of pagination)
-        val dummyListPage1 = List(6) { MovieResult(it, "Movie $it", 8.0, "") }
-
-        Text("Kasus 1: Data Banyak (Page 1)")
-        PaginationFooter(
-            currentPage = 1,
-            totalPages = 4,
-            currentCount = dummyListPage1.size,
-            totalCount = 20
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Case 2: (Showing 4 of 4)
-        val dummyListSmall = List(4) { MovieResult(it, "Movie $it", 8.0, "") }
-
-        Text("Kasus 2: Data Sedikit (< 6)")
-        PaginationFooter(
-            currentPage = 1,
-            totalPages = 1,
-            currentCount = dummyListSmall.size,
-            totalCount = 4
+fun PageBox(number: Int, isSelected: Boolean) {
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .background(if (isSelected) Color(0xFFFFC107) else Color.Transparent, shape = RoundedCornerShape(4.dp))
+            .clickable { /* Handle Page Change */ },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = number.toString(),
+            fontWeight = FontWeight.Bold,
+            color = if (isSelected) Color.Black else Color.Gray
         )
     }
 }
-
-val dummyResults = listOf(
-    MovieResult(1, "Stranger Things", 8.6, "https://pasjabar.com/wp-content/uploads/2025/11/stranger-things-characters-5.jpg"),
-    MovieResult(2, "Dark", 8.7, "https://m.media-amazon.com/images/M/MV5BOWJjMGViY2UtNTAzNS00ZGFjLWFkNTMtMDBiMDMyZTM1NTY3XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg"),
-    MovieResult(3, "Black Mirror", 8.7, "https://m.media-amazon.com/images/M/MV5BODcxMWI2NDMtYTc3NC00OTZjLWFmNmUtM2NmY2I1ODkxYzczXkEyXkFqcGc@._V1_.jpg")
-)

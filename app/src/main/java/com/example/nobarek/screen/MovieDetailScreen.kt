@@ -33,7 +33,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -222,28 +221,3 @@ fun CastChip(actor: CastMember) {
         }
     }
 }
-
-// PREVIEW
-@Preview(showBackground = true)
-@Composable
-fun PreviewMovieDetail() {
-    MaterialTheme {
-        MovieDetailScreen(movie = dummyMovie)
-    }
-}
-
-// Dummy Data
-val dummyMovie = Movie(
-    title = "Stranger Things",
-    season = "Season 5",
-    genres = listOf("Fantasy", "Sci-Fi", "Supernatural"),
-    rating = 8.6,
-    duration = "1h",
-    description = "In a small town where everyone knows everyone, a peculiar incident starts a chain of events that leads to a child's disappearance, which begins to tear at the fabric of an otherwise-peaceful community.",
-    posterUrl = "https://pasjabar.com/wp-content/uploads/2025/11/stranger-things-characters-5.jpg",
-    cast = listOf(
-        CastMember("Millie Bobby Brown", "https://assets.teenvogue.com/photos/6706b4defee2b18e092f6a2c/16:9/w_2560%2Cc_limit/2052040266"),
-        CastMember("Finn Wolfhard", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQyv5XIPId7xz1ZidxS4HhatZOsUZJAWz4oPQ&s"),
-        CastMember("Winona Ryder", "https://static.wikia.nocookie.net/timburton/images/9/94/Winona_Ryder.jpg/revision/latest?cb=20240103025223")
-    )
-)
