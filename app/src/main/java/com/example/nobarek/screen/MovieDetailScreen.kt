@@ -2,6 +2,7 @@ package com.example.nobarek.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -19,9 +20,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -39,8 +45,8 @@ import coil.compose.AsyncImage
 
 // DATA MODELS
 data class Movie(
+    val id: Int = 0,
     val title: String,
-    val season: String,
     val genres: List<String>,
     val rating: Double,
     val duration: String,
@@ -56,68 +62,108 @@ data class CastMember(
 
 // MAIN SCREEN
 @Composable
-fun MovieDetailScreen(movie: Movie) {
+fun MovieDetailScreen(
+    movie: Movie,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onBackClick: () -> Unit
+) {
     val scrollState = rememberScrollState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFEAEAEA))
-            .verticalScroll(scrollState)
-            .navigationBarsPadding()
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .navigationBarsPadding()
     ) {
-        // Header Image
-        HeaderSection(imageUrl = movie.posterUrl)
-
-        // Content Body
         Column(
             modifier = Modifier
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .background(Color(0xFFEAEAEA))
+                .verticalScroll(scrollState)
+                .navigationBarsPadding()
         ) {
-            // Title
-            Text(
-                text = "${movie.title}:",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-            Text(
-                text = movie.season,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
+            // Header Image
+            HeaderSection(imageUrl = movie.posterUrl)
 
-            Spacer(modifier = Modifier.height(8.dp))
+            // Content Body
+            Column(
+                modifier = Modifier
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Title
+                Text(
+                    text = movie.title,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
 
-            // Genres
-            Text(
-                text = movie.genres.joinToString(" • "),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
-            )
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
+                // Genres
+                Text(
+                    text = movie.genres.joinToString(" • "),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
 
-            // Stats Row (Rating & Duration)
-            StatsSection(rating = movie.rating, duration = movie.duration)
+                Spacer(modifier = Modifier.height(24.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
+                // Stats Row (Rating & Duration)
+                StatsSection(rating = movie.rating, duration = movie.duration)
 
-            // Description
-            Text(
-                text = movie.description,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-                color = Color.Black,
-                lineHeight = 20.sp
-            )
+                Spacer(modifier = Modifier.height(24.dp))
 
-            Spacer(modifier = Modifier.height(32.dp))
+                // Description
+                Text(
+                    text = movie.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = Color.Black,
+                    lineHeight = 20.sp
+                )
 
-            // Cast Section
-            CastSection(castList = movie.cast)
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Cast Section
+                CastSection(castList = movie.cast)
+            }
+        }
+
+        // TOP BAR (Back & Delete)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 48.dp, start = 16.dp, end = 16.dp), // Padding status bar
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Back Button
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier
+                    .background(Color.Black.copy(alpha = 0.4f), shape = CircleShape)
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+            }
+
+            // Delete Button
+            IconButton(
+                onClick = onDeleteClick,
+                modifier = Modifier
+                    .background(Color.White.copy(alpha = 0.8f), shape = CircleShape)
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red)
+            }
+        }
+
+        FloatingActionButton(
+            onClick = onEditClick,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+            containerColor = MaterialTheme.colorScheme.primary
+        ) {
+            Icon(Icons.Default.Edit, contentDescription = "Edit Movie")
         }
     }
 }
