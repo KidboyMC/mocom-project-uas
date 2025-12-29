@@ -1,6 +1,5 @@
 package com.example.nobarek.screen
 
-import SearchBar
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,9 +22,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -65,10 +66,16 @@ fun HomeScreen(
     genreMovies: List<MovieItem>,
     onSearchTriggered: (String) -> Unit,
     onMovieClick: (Int) -> Unit,
-    onViewMoreClick: () -> Unit
+    onViewMoreClick: () -> Unit,
+    onAddClick: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
     Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(onClick = onAddClick) {
+                Icon(Icons.Default.Add, contentDescription = "Add Movie")
+            }
+        },
         topBar = { Box(
             modifier = Modifier
                 .fillMaxWidth()
