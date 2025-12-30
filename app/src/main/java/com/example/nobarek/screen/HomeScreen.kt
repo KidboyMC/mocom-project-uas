@@ -22,11 +22,12 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -64,32 +65,99 @@ fun HomeScreen(
     featuredMovies: List<MovieItem>,
     popularMovies: List<MovieItem>,
     genreMovies: List<MovieItem>,
+    isAdmin: Boolean,
     onSearchTriggered: (String) -> Unit,
     onMovieClick: (Int) -> Unit,
     onViewMoreClick: () -> Unit,
-    onAddClick: () -> Unit
+    onAdminClick: () -> Unit,
+    onLogoutClick: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(onClick = onAddClick) {
-                Icon(Icons.Default.Add, contentDescription = "Add Movie")
+    var selectedGenre by remember { mutableStateOf("All") }
+    var browseGenre by remember { mutableStateOf("Action") }
+    var selectedRating by remember { mutableStateOf("All") }
+    
+    // Filter popular movies based on selected filters
+    val filteredPopularMovies = remember(popularMovies, selectedGenre, selectedRating) {
+        popularMovies.filter { movie ->
+            val genreMatch = selectedGenre == "All" || movie.genres.contains(selectedGenre)
+            val ratingMatch = when (selectedRating) {
+                "All" -> true
+                "≥7.0" -> movie.rating >= 7.0
+                "≥8.0" -> movie.rating >= 8.0
+                "≥9.0" -> movie.rating >= 9.0
+                else -> true
             }
-        },
-        topBar = { Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFEAEAEA))
-                .padding(start = 16.dp, end = 16.dp, top = 64.dp)
+            genreMatch && ratingMatch
+        }
+    }
+    
+    // Filter genre movies based on browse genre
+    val filteredGenreMovies = remember(genreMovies, browseGenre) {
+        genreMovies.filter { movie ->
+            movie.genres.contains(browseGenre)
+        }
+    }
+    Scaffold(
+        topBar = { 
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFEAEAEA))
             ) {
-                SearchBar(
-                    query = searchQuery,
-                    onQueryChange = { newText -> searchQuery = newText },
-                    onSearch = {
-                        // Panggil navigasi ke halaman Search Result di sini
-                        onSearchTriggered(searchQuery)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, top = 64.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    SearchBar(
+                        query = searchQuery,
+                        onQueryChange = { newText -> searchQuery = newText },
+                        onSearch = {
+                            // Panggil navigasi ke halaman Search Result di sini
+                            onSearchTriggered(searchQuery)
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    // Admin Button - Only show if user is admin
+                    if (isAdmin) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFFFFC107),
+                            modifier = Modifier.clickable { onAdminClick() }
+                        ) {
+                            Text(
+                                text = "Admin",
+                                fontSize = 12.sp,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                            )
+                        }
                     }
-                )
+                    // Logout Button
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFFEF5350),
+                        modifier = Modifier.clickable { onLogoutClick() }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                contentDescription = "Logout",
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
     ) { paddingValues ->
@@ -118,19 +186,40 @@ fun HomeScreen(
             item {
                 SectionHeader(title = "Popular", onClick = { onViewMoreClick() }) // Trigger View More
             }
-            items(popularMovies) { movie ->
+            items(filteredPopularMovies) { movie ->
                 PopularMovieItem(movie, onClick = { onMovieClick(movie.id) }) // Trigger Click
+            }
+            
+            // Show message if no movies match the filter
+            if (filteredPopularMovies.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No movies found with selected filters",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray
+                        )
+                    }
+                }
             }
 
             // SECTION: BROWSE BY GENRE
             item {
                 Spacer(modifier = Modifier.height(24.dp))
-                GenreHeader(selectedGenre = "Action", onGenreClick = {})
+                GenreHeader(
+                    selectedGenre = browseGenre, 
+                    onGenreSelected = { newGenre -> browseGenre = newGenre }
+                )
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
-                    items(genreMovies) { movie ->
+                    items(filteredGenreMovies) { movie ->
                         FeaturedMovieCard(movie, onClick = { onMovieClick(movie.id) }) // Re-use card yang sama dengan featured
                     }
                 }
@@ -171,7 +260,10 @@ fun SectionHeader(title: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun GenreHeader(selectedGenre: String, onGenreClick: () -> Unit) {
+fun GenreHeader(selectedGenre: String, onGenreSelected: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val genres = listOf("Action", "Drama", "Comedy", "Horror", "Sci-Fi", "Fantasy", "Romance", "Thriller")
+    
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -188,9 +280,29 @@ fun GenreHeader(selectedGenre: String, onGenreClick: () -> Unit) {
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = selectedGenre, fontSize = 12.sp, color = Color.Gray)
-                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.Gray)
+            Box {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { expanded = true }
+                ) {
+                    Text(text = selectedGenre, fontSize = 12.sp, color = Color.Gray)
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.Gray)
+                }
+                
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    genres.forEach { genre ->
+                        DropdownMenuItem(
+                            text = { Text(genre) },
+                            onClick = {
+                                onGenreSelected(genre)
+                                expanded = false
+                            }
+                        )
+                    }
+                }
             }
         }
 
