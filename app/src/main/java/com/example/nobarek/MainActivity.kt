@@ -9,25 +9,34 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.example.nobarek.data.local.AppDatabase
 import com.example.nobarek.data.repository.MovieRepository
+import com.example.nobarek.data.repository.UserRepository
 import com.example.nobarek.navigation.AppNavigation
 import com.example.nobarek.ui.theme.NobaRekTheme
 import com.example.nobarek.viewmodel.MovieViewModelFactory
+import com.example.nobarek.viewmodel.UserViewModelFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 1. Initialize Database & Repository
+        // 1. Initialize Database & Repositories
         val database = AppDatabase.getDatabase(applicationContext)
-        val repository = MovieRepository(database.movieDao())
-        val viewModelFactory = MovieViewModelFactory(repository)
+        val movieRepository = MovieRepository(database.movieDao())
+        val userRepository = UserRepository(database.userDao())
+        
+        // 2. Create ViewModelFactories
+        val movieViewModelFactory = MovieViewModelFactory(movieRepository)
+        val userViewModelFactory = UserViewModelFactory(userRepository)
 
         enableEdgeToEdge()
         setContent {
             NobaRekTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    // 2. Send Factory to AppNavigation
-                    AppNavigation(viewModelFactory = viewModelFactory)
+                    // 3. Send Factories to AppNavigation
+                    AppNavigation(
+                        movieViewModelFactory = movieViewModelFactory,
+                        userViewModelFactory = userViewModelFactory
+                    )
                 }
             }
         }

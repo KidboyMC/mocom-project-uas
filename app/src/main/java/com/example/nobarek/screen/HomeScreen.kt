@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.DropdownMenu
@@ -32,6 +33,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -68,10 +70,12 @@ fun HomeScreen(
     featuredMovies: List<MovieItem>,
     popularMovies: List<MovieItem>,
     genreMovies: List<MovieItem>,
+    isAdmin: Boolean,
     onSearchTriggered: (String) -> Unit,
     onMovieClick: (Int) -> Unit,
     onViewMoreClick: () -> Unit,
-    onAddClick: () -> Unit
+    onAdminClick: () -> Unit,
+    onLogoutClick: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedGenre by remember { mutableStateOf("All") }
@@ -100,21 +104,18 @@ fun HomeScreen(
         }
     }
     Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(onClick = onAddClick) {
-                Icon(Icons.Default.Add, contentDescription = "Add Movie")
-            }
-        },
         topBar = { 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color(0xFFEAEAEA))
             ) {
-                Box(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, top = 64.dp)
+                        .padding(start = 16.dp, end = 16.dp, top = 64.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     SearchBar(
                         query = searchQuery,
@@ -122,8 +123,45 @@ fun HomeScreen(
                         onSearch = {
                             // Panggil navigasi ke halaman Search Result di sini
                             onSearchTriggered(searchQuery)
-                        }
+                        },
+                        modifier = Modifier.weight(1f)
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    // Admin Button - Only show if user is admin
+                    if (isAdmin) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFF6200EE),
+                            modifier = Modifier.clickable { onAdminClick() }
+                        ) {
+                            Text(
+                                text = "Admin",
+                                fontSize = 12.sp,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                            )
+                        }
+                    }
+                    // Logout Button
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFFEF5350),
+                        modifier = Modifier.clickable { onLogoutClick() }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ExitToApp,
+                                contentDescription = "Logout",
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
                 }
                 FilterBar(
                     selectedGenre = selectedGenre,

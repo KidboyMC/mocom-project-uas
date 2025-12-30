@@ -64,6 +64,7 @@ data class CastMember(
 @Composable
 fun MovieDetailScreen(
     movie: Movie,
+    isAdminMode: Boolean = false,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onBackClick: () -> Unit
@@ -146,24 +147,29 @@ fun MovieDetailScreen(
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
             }
 
-            // Delete Button
-            IconButton(
-                onClick = onDeleteClick,
-                modifier = Modifier
-                    .background(Color.White.copy(alpha = 0.8f), shape = CircleShape)
-            ) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red)
+            // Delete Button (Only in Admin Mode)
+            if (isAdminMode) {
+                IconButton(
+                    onClick = onDeleteClick,
+                    modifier = Modifier
+                        .background(Color.White.copy(alpha = 0.8f), shape = CircleShape)
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red)
+                }
             }
         }
 
-        FloatingActionButton(
-            onClick = onEditClick,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp),
-            containerColor = MaterialTheme.colorScheme.primary
-        ) {
-            Icon(Icons.Default.Edit, contentDescription = "Edit Movie")
+        // Edit FAB (Only in Admin Mode)
+        if (isAdminMode) {
+            FloatingActionButton(
+                onClick = onEditClick,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(Icons.Default.Edit, contentDescription = "Edit Movie")
+            }
         }
     }
 }
