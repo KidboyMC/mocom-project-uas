@@ -1,6 +1,5 @@
 package com.example.nobarek.navigation
 
-import com.example.nobarek.screen.UnifiedMovieListScreen
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -17,15 +16,18 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.nobarek.screen.AddEditMovieScreen
+import com.example.nobarek.screen.GetStartedScreen
 import com.example.nobarek.screen.HomeScreen
 import com.example.nobarek.screen.MovieDetailScreen
 import com.example.nobarek.screen.SplashScreen
+import com.example.nobarek.screen.UnifiedMovieListScreen
 import com.example.nobarek.viewmodel.MovieViewModel
 import com.example.nobarek.viewmodel.MovieViewModelFactory
 
 @Composable
 fun AppNavigation(viewModelFactory: MovieViewModelFactory) {
     val navController = rememberNavController()
+
     // Initialize ViewModel
     val viewModel: MovieViewModel = viewModel(factory = viewModelFactory)
 
@@ -37,21 +39,36 @@ fun AppNavigation(viewModelFactory: MovieViewModelFactory) {
 
     NavHost(navController = navController, startDestination = "splash_screen") {
 
+        // 1. SPLASH SCREEN
         composable("splash_screen") {
             SplashScreen(
                 onSplashFinished = {
-                    navController.navigate("home_screen") {
+                    // Update: Arahkan ke Get Started dulu
+                    navController.navigate("get_started_screen") {
                         popUpTo("splash_screen") { inclusive = true }
                     }
                 }
             )
         }
 
+        // 2. GET STARTED SCREEN
+        composable("get_started_screen") {
+            GetStartedScreen(
+                onGetStartedClick = {
+                    // Masuk ke Home dan hapus Get Started dari history
+                    navController.navigate("home_screen") {
+                        popUpTo("get_started_screen") { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // 3. HOME SCREEN
         composable("home_screen") {
             HomeScreen(
                 featuredMovies = featuredMovies,
                 popularMovies = popularMovies,
-                genreMovies = featuredMovies,
+                genreMovies = featuredMovies, // Bisa disesuaikan jika ada genre specific
                 onSearchTriggered = { query ->
                     if (query.isNotEmpty()) {
                         viewModel.searchMovies(query)
@@ -66,13 +83,13 @@ fun AppNavigation(viewModelFactory: MovieViewModelFactory) {
                     viewModel.getMovieDetail(movieId)
                     navController.navigate("movie_detail_screen/$movieId")
                 },
-
                 onAddClick = {
                     navController.navigate("add_edit_movie?movieId=0")
                 }
             )
         }
 
+        // 4. MOVIE LIST / SEARCH RESULT
         composable(
             route = "movie_list_screen?query={query}",
             arguments = listOf(navArgument("query") { defaultValue = "" })
@@ -87,7 +104,7 @@ fun AppNavigation(viewModelFactory: MovieViewModelFactory) {
 
             UnifiedMovieListScreen(
                 initialQuery = query,
-                results = searchResults,
+                results = searchResults, // Menggunakan Data dari Room DB
                 totalResults = searchResults.size,
                 onMovieClick = { movieId ->
                     viewModel.getMovieDetail(movieId)
@@ -95,15 +112,19 @@ fun AppNavigation(viewModelFactory: MovieViewModelFactory) {
                 },
                 onSearchTriggered = { newQuery ->
                     viewModel.searchMovies(newQuery)
-                    navController.navigate("movie_list_screen?query=$newQuery")
+                    navController.navigate("movie_list_screen?query=$newQuery") {
+                        popUpTo("movie_list_screen?query={query}") { inclusive = true }
+                    }
                 }
             )
         }
 
+        // 5. MOVIE DETAIL
         composable(
             route = "movie_detail_screen/{movieId}",
             arguments = listOf(navArgument("movieId") { type = NavType.IntType })
         ) {
+            // Tampilkan loading jika data belum siap
             if (selectedMovie != null) {
                 MovieDetailScreen(
                     movie = selectedMovie!!,
@@ -114,7 +135,6 @@ fun AppNavigation(viewModelFactory: MovieViewModelFactory) {
                     onDeleteClick = {
                         // Delete Data from DB
                         viewModel.deleteMovie(selectedMovie!!.id)
-
                         // Return to Home
                         navController.popBackStack()
                     },
@@ -123,13 +143,14 @@ fun AppNavigation(viewModelFactory: MovieViewModelFactory) {
                     }
                 )
             } else {
-                // LoadingSpinner
+                // Loading Spinner saat mengambil data dari DB
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
             }
         }
 
+        // 6. ADD / EDIT MOVIE FORM
         composable(
             route = "add_edit_movie?movieId={movieId}",
             arguments = listOf(navArgument("movieId") {
