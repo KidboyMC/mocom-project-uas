@@ -26,6 +26,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -70,25 +74,62 @@ fun HomeScreen(
     onAddClick: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    var selectedGenre by remember { mutableStateOf("All") }
+    var browseGenre by remember { mutableStateOf("Action") }
+    var selectedRating by remember { mutableStateOf("All") }
+    
+    // Filter popular movies based on selected filters
+    val filteredPopularMovies = remember(popularMovies, selectedGenre, selectedRating) {
+        popularMovies.filter { movie ->
+            val genreMatch = selectedGenre == "All" || movie.genres.contains(selectedGenre)
+            val ratingMatch = when (selectedRating) {
+                "All" -> true
+                "≥7.0" -> movie.rating >= 7.0
+                "≥8.0" -> movie.rating >= 8.0
+                "≥9.0" -> movie.rating >= 9.0
+                else -> true
+            }
+            genreMatch && ratingMatch
+        }
+    }
+    
+    // Filter genre movies based on browse genre
+    val filteredGenreMovies = remember(genreMovies, browseGenre) {
+        genreMovies.filter { movie ->
+            movie.genres.contains(browseGenre)
+        }
+    }
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = onAddClick) {
                 Icon(Icons.Default.Add, contentDescription = "Add Movie")
             }
         },
-        topBar = { Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFEAEAEA))
-                .padding(start = 16.dp, end = 16.dp, top = 64.dp)
+        topBar = { 
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFEAEAEA))
             ) {
-                SearchBar(
-                    query = searchQuery,
-                    onQueryChange = { newText -> searchQuery = newText },
-                    onSearch = {
-                        // Panggil navigasi ke halaman Search Result di sini
-                        onSearchTriggered(searchQuery)
-                    }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, top = 64.dp)
+                ) {
+                    SearchBar(
+                        query = searchQuery,
+                        onQueryChange = { newText -> searchQuery = newText },
+                        onSearch = {
+                            // Panggil navigasi ke halaman Search Result di sini
+                            onSearchTriggered(searchQuery)
+                        }
+                    )
+                }
+                FilterBar(
+                    selectedGenre = selectedGenre,
+                    selectedRating = selectedRating,
+                    onGenreSelected = { selectedGenre = it },
+                    onRatingSelected = { selectedRating = it }
                 )
             }
         }
@@ -118,19 +159,40 @@ fun HomeScreen(
             item {
                 SectionHeader(title = "Popular", onClick = { onViewMoreClick() }) // Trigger View More
             }
-            items(popularMovies) { movie ->
+            items(filteredPopularMovies) { movie ->
                 PopularMovieItem(movie, onClick = { onMovieClick(movie.id) }) // Trigger Click
+            }
+            
+            // Show message if no movies match the filter
+            if (filteredPopularMovies.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No movies found with selected filters",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray
+                        )
+                    }
+                }
             }
 
             // SECTION: BROWSE BY GENRE
             item {
                 Spacer(modifier = Modifier.height(24.dp))
-                GenreHeader(selectedGenre = "Action", onGenreClick = {})
+                GenreHeader(
+                    selectedGenre = browseGenre, 
+                    onGenreSelected = { newGenre -> browseGenre = newGenre }
+                )
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
-                    items(genreMovies) { movie ->
+                    items(filteredGenreMovies) { movie ->
                         FeaturedMovieCard(movie, onClick = { onMovieClick(movie.id) }) // Re-use card yang sama dengan featured
                     }
                 }
@@ -171,7 +233,10 @@ fun SectionHeader(title: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun GenreHeader(selectedGenre: String, onGenreClick: () -> Unit) {
+fun GenreHeader(selectedGenre: String, onGenreSelected: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val genres = listOf("Action", "Drama", "Comedy", "Horror", "Sci-Fi", "Fantasy", "Romance", "Thriller")
+    
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -188,9 +253,29 @@ fun GenreHeader(selectedGenre: String, onGenreClick: () -> Unit) {
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = selectedGenre, fontSize = 12.sp, color = Color.Gray)
-                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.Gray)
+            Box {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { expanded = true }
+                ) {
+                    Text(text = selectedGenre, fontSize = 12.sp, color = Color.Gray)
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.Gray)
+                }
+                
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    genres.forEach { genre ->
+                        DropdownMenuItem(
+                            text = { Text(genre) },
+                            onClick = {
+                                onGenreSelected(genre)
+                                expanded = false
+                            }
+                        )
+                    }
+                }
             }
         }
 
@@ -326,6 +411,89 @@ fun GenreChip(text: String) {
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 12.dp)) {
             Text(text = text, fontSize = 10.sp, color = Color.Black)
+        }
+    }
+}
+
+// FILTER BAR COMPONENT
+@Composable
+fun FilterBar(
+    selectedGenre: String,
+    selectedRating: String,
+    onGenreSelected: (String) -> Unit,
+    onRatingSelected: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, bottom = 8.dp)
+    ) {
+        // Genre Filters
+        Text(
+            text = "Genre",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(start = 16.dp, bottom = 4.dp),
+            color = Color.Gray
+        )
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp)
+        ) {
+            val genres = listOf("All", "Action", "Drama", "Comedy", "Horror", "Sci-Fi", "Fantasy", "Romance", "Thriller")
+            items(genres) { genre ->
+                FilterChip(
+                    selected = selectedGenre == genre,
+                    onClick = { onGenreSelected(genre) },
+                    label = { 
+                        Text(
+                            text = genre,
+                            fontSize = 12.sp
+                        ) 
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFF6200EE),
+                        selectedLabelColor = Color.White,
+                        containerColor = Color.White,
+                        labelColor = Color.Black
+                    )
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Rating Filters
+        Text(
+            text = "Rating",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(start = 16.dp, bottom = 4.dp),
+            color = Color.Gray
+        )
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp)
+        ) {
+            val ratings = listOf("All", "≥7.0", "≥8.0", "≥9.0")
+            items(ratings) { rating ->
+                FilterChip(
+                    selected = selectedRating == rating,
+                    onClick = { onRatingSelected(rating) },
+                    label = { 
+                        Text(
+                            text = rating,
+                            fontSize = 12.sp
+                        ) 
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFFFFC107),
+                        selectedLabelColor = Color.Black,
+                        containerColor = Color.White,
+                        labelColor = Color.Black
+                    )
+                )
+            }
         }
     }
 }

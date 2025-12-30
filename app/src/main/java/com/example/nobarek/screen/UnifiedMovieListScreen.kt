@@ -22,6 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -62,6 +64,28 @@ fun UnifiedMovieListScreen(
     // Search State
     var searchQuery by remember { mutableStateOf(initialQuery) }
     val focusManager = LocalFocusManager.current
+    
+    // Sort and Filter State
+    var selectedSortOption by remember { mutableStateOf("Name (A-Z)") }
+    var selectedGenreFilter by remember { mutableStateOf("All") }
+    
+    // Apply sorting and filtering
+    val sortedAndFilteredResults = remember(results, selectedSortOption, selectedGenreFilter) {
+        var filtered = results
+        
+        // Apply genre filter (Note: MovieResult doesn't have genres, so this is a placeholder)
+        // In real implementation, you'd need to add genres to MovieResult
+        // For now, we'll just apply sorting
+        
+        // Apply sorting
+        when (selectedSortOption) {
+            "Name (A-Z)" -> filtered.sortedBy { it.title }
+            "Name (Z-A)" -> filtered.sortedByDescending { it.title }
+            "Rating (High-Low)" -> filtered.sortedByDescending { it.rating }
+            "Rating (Low-High)" -> filtered.sortedBy { it.rating }
+            else -> filtered
+        }
+    }
 
     // Dynamic Logic Title:
     // If searchQuery is not empty -> Search Mode
@@ -104,7 +128,12 @@ fun UnifiedMovieListScreen(
             // Filter/Sort Row (Only appears if NOT in search mode)
             if (!isSearchMode) {
                 Spacer(modifier = Modifier.height(16.dp))
-                SortFilterRow()
+                SortFilterRow(
+                    selectedSortOption = selectedSortOption,
+                    selectedGenreFilter = selectedGenreFilter,
+                    onSortOptionSelected = { selectedSortOption = it },
+                    onGenreFilterSelected = { selectedGenreFilter = it }
+                )
             }
         }
 
@@ -125,7 +154,7 @@ fun UnifiedMovieListScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
-                    items(results) { movie ->
+                    items(sortedAndFilteredResults) { movie ->
                         MovieGridItem(movie = movie, onClick = { onMovieClick(movie.id) })
                     }
                 }
@@ -150,7 +179,12 @@ fun UnifiedMovieListScreen(
 // SUB-COMPONENTS
 
 @Composable
-fun SortFilterRow() {
+fun SortFilterRow(
+    selectedSortOption: String,
+    selectedGenreFilter: String,
+    onSortOptionSelected: (String) -> Unit,
+    onGenreFilterSelected: (String) -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -159,20 +193,56 @@ fun SortFilterRow() {
         Text(text = "Sort By:", fontWeight = FontWeight.Bold, fontSize = 12.sp)
         Spacer(modifier = Modifier.width(8.dp))
 
-        SortChip(text = "Name (A - Z)")
+        SortChip(
+            text = selectedSortOption,
+            options = listOf("Name (A-Z)", "Name (Z-A)", "Rating (High-Low)", "Rating (Low-High)"),
+            onOptionSelected = onSortOptionSelected
+        )
         Spacer(modifier = Modifier.width(8.dp))
-        SortChip(text = "All Genre")
+        SortChip(
+            text = if (selectedGenreFilter == "All") "All Genre" else selectedGenreFilter,
+            options = listOf("All", "Action", "Drama", "Comedy", "Horror", "Sci-Fi", "Fantasy", "Romance", "Thriller"),
+            onOptionSelected = onGenreFilterSelected
+        )
     }
 }
 
 @Composable
-fun SortChip(text: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.clickable { /* Handle Sort Click */ }
-    ) {
-        Text(text = text, fontSize = 12.sp, color = Color.Gray)
-        Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.Gray)
+fun SortChip(
+    text: String,
+    options: List<String>,
+    onOptionSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    
+    Box {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.clickable { expanded = true }
+        ) {
+            Text(text = text, fontSize = 12.sp, color = Color.Gray)
+            Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.Gray)
+        }
+        
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { 
+                        Text(
+                            text = option,
+                            fontWeight = if (option == text || (text == "All Genre" && option == "All")) FontWeight.Bold else FontWeight.Normal
+                        )
+                    },
+                    onClick = {
+                        onOptionSelected(option)
+                        expanded = false
+                    }
+                )
+            }
+        }
     }
 }
 
