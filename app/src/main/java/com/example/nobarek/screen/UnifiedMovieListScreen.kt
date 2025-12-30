@@ -49,7 +49,8 @@ data class MovieResult(
     val id: Int,
     val title: String,
     val rating: Double,
-    val posterUrl: String
+    val posterUrl: String,
+    val genres: List<String> = emptyList()
 )
 
 // MAIN SCREEN
@@ -73,9 +74,12 @@ fun UnifiedMovieListScreen(
     val sortedAndFilteredResults = remember(results, selectedSortOption, selectedGenreFilter) {
         var filtered = results
         
-        // Apply genre filter (Note: MovieResult doesn't have genres, so this is a placeholder)
-        // In real implementation, you'd need to add genres to MovieResult
-        // For now, we'll just apply sorting
+        // Apply genre filter
+        if (selectedGenreFilter != "All") {
+            filtered = filtered.filter { movie ->
+                movie.genres.contains(selectedGenreFilter)
+            }
+        }
         
         // Apply sorting
         when (selectedSortOption) {
