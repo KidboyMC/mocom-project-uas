@@ -22,18 +22,13 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -131,7 +126,7 @@ fun HomeScreen(
                     if (isAdmin) {
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFF6200EE),
+                            color = Color(0xFFFFC107),
                             modifier = Modifier.clickable { onAdminClick() }
                         ) {
                             Text(
@@ -139,7 +134,7 @@ fun HomeScreen(
                                 fontSize = 12.sp,
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                             )
                         }
                     }
@@ -155,7 +150,7 @@ fun HomeScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.Default.ExitToApp,
+                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                                 contentDescription = "Logout",
                                 tint = Color.White,
                                 modifier = Modifier.size(16.dp)
@@ -163,12 +158,6 @@ fun HomeScreen(
                         }
                     }
                 }
-                FilterBar(
-                    selectedGenre = selectedGenre,
-                    selectedRating = selectedRating,
-                    onGenreSelected = { selectedGenre = it },
-                    onRatingSelected = { selectedRating = it }
-                )
             }
         }
     ) { paddingValues ->
@@ -449,89 +438,6 @@ fun GenreChip(text: String) {
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 12.dp)) {
             Text(text = text, fontSize = 10.sp, color = Color.Black)
-        }
-    }
-}
-
-// FILTER BAR COMPONENT
-@Composable
-fun FilterBar(
-    selectedGenre: String,
-    selectedRating: String,
-    onGenreSelected: (String) -> Unit,
-    onRatingSelected: (String) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 8.dp)
-    ) {
-        // Genre Filters
-        Text(
-            text = "Genre",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(start = 16.dp, bottom = 4.dp),
-            color = Color.Gray
-        )
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp)
-        ) {
-            val genres = listOf("All", "Action", "Drama", "Comedy", "Horror", "Sci-Fi", "Fantasy", "Romance", "Thriller")
-            items(genres) { genre ->
-                FilterChip(
-                    selected = selectedGenre == genre,
-                    onClick = { onGenreSelected(genre) },
-                    label = { 
-                        Text(
-                            text = genre,
-                            fontSize = 12.sp
-                        ) 
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Color(0xFF6200EE),
-                        selectedLabelColor = Color.White,
-                        containerColor = Color.White,
-                        labelColor = Color.Black
-                    )
-                )
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        // Rating Filters
-        Text(
-            text = "Rating",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(start = 16.dp, bottom = 4.dp),
-            color = Color.Gray
-        )
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp)
-        ) {
-            val ratings = listOf("All", "≥7.0", "≥8.0", "≥9.0")
-            items(ratings) { rating ->
-                FilterChip(
-                    selected = selectedRating == rating,
-                    onClick = { onRatingSelected(rating) },
-                    label = { 
-                        Text(
-                            text = rating,
-                            fontSize = 12.sp
-                        ) 
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Color(0xFFFFC107),
-                        selectedLabelColor = Color.Black,
-                        containerColor = Color.White,
-                        labelColor = Color.Black
-                    )
-                )
-            }
         }
     }
 }
