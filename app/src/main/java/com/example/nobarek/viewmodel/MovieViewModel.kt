@@ -52,7 +52,7 @@ class MovieViewModel(private val repository: MovieRepository) : ViewModel() {
     fun searchMovies(query: String) {
         viewModelScope.launch {
             val results = repository.searchMovies(query).map { entity ->
-                MovieResult(entity.id, entity.title, entity.rating, entity.posterUrl)
+                MovieResult(entity.id, entity.title, entity.rating, entity.posterUrl, entity.genres.split(","))
             }
             _searchResults.value = results
         }
@@ -73,7 +73,8 @@ class MovieViewModel(private val repository: MovieRepository) : ViewModel() {
                         id = entity.id,
                         title = entity.title,
                         rating = entity.rating,
-                        posterUrl = entity.posterUrl
+                        posterUrl = entity.posterUrl,
+                        genres = entity.genres.split(",")
                     )
                 }
 

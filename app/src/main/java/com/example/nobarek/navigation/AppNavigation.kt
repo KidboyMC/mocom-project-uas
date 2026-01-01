@@ -1,13 +1,9 @@
 package com.example.nobarek.navigation
 
-import com.example.nobarek.screen.MainScreen
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -16,133 +12,203 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.nobarek.screen.AddEditMovieScreen
-import com.example.nobarek.screen.GetStartedScreen
-import com.example.nobarek.screen.MovieDetailScreen
-import com.example.nobarek.screen.SplashScreen
-import com.example.nobarek.screen.UnifiedMovieListScreen
+import com.example.nobarek.screen.*
 import com.example.nobarek.viewmodel.MovieViewModel
 import com.example.nobarek.viewmodel.MovieViewModelFactory
+import com.example.nobarek.viewmodel.UserViewModel
+import com.example.nobarek.viewmodel.UserViewModelFactory
 
 @Composable
-fun AppNavigation(viewModelFactory: MovieViewModelFactory) {
+fun AppNavigation(
+    movieViewModelFactory: MovieViewModelFactory,
+    userViewModelFactory: UserViewModelFactory
+) {
     val navController = rememberNavController()
-    val viewModel: MovieViewModel = viewModel(factory = viewModelFactory)
 
-    // State
-    val searchResults by viewModel.searchResults.collectAsState()
-    val selectedMovie by viewModel.selectedMovie.collectAsState()
+    val movieViewModel: MovieViewModel = viewModel(factory = movieViewModelFactory)
+    val userViewModel: UserViewModel = viewModel(factory = userViewModelFactory)
 
-    NavHost(navController = navController, startDestination = "splash_screen") {
+    val featuredMovies by movieViewModel.featuredMovies.collectAsState()
+    val popularMovies by movieViewModel.popularMovies.collectAsState()
+    val searchResults by movieViewModel.searchResults.collectAsState()
+    val selectedMovie by movieViewModel.selectedMovie.collectAsState()
 
-        // 1. SPLASH SCREEN
+    val loggedInUser by userViewModel.loggedInUser.collectAsState()
+    val isAdmin by userViewModel.isAdmin.collectAsState()
+    val loginError by userViewModel.loginError.collectAsState()
+
+    NavHost(
+        navController = navController,
+        startDestination = "splash_screen"
+    ) {
+
+        // SPLASH
         composable("splash_screen") {
-            SplashScreen(
-                onSplashFinished = {
-                    navController.navigate("get_started_screen") {
-                        popUpTo("splash_screen") { inclusive = true }
-                    }
+            SplashScreen {
+                navController.navigate("login_screen") {
+                    popUpTo("splash_screen") { inclusive = true }
                 }
-            )
+            }
         }
 
-        // 2. GET STARTED SCREEN
-        composable("get_started_screen") {
-            GetStartedScreen(
-                onGetStartedClick = {
+        // LOGIN
+        composable("login_screen") {
+            LoginScreen(
+                onLoginClick = { u, p -> userViewModel.login(u, p) },
+                onRegisterClick = { navController.navigate("register_screen") },
+                errorMessage = loginError
+            )
+
+            LaunchedEffect(loggedInUser) {
+                if (loggedInUser != null) {
                     navController.navigate("home_screen") {
-                        popUpTo("get_started_screen") { inclusive = true }
+                        popUpTo("login_screen") { inclusive = true }
                     }
                 }
+            }
+        }
+
+        // REGISTER
+        composable("register_screen") {
+            RegisterScreen(
+                onRegisterClick = { u, p ->
+                    userViewModel.register(u, p, "user") {}
+                },
+                onBackToLoginClick = {
+                    userViewModel.clearError()
+                    navController.popBackStack()
+                },
+                errorMessage = loginError
             )
         }
 
-        // 3. HOME SCREEN
+        // HOME
         composable("home_screen") {
-            MainScreen(
-                viewModel = viewModel,
-                onMovieClick = { movieId ->
-                    viewModel.getMovieDetail(movieId)
-                    navController.navigate("movie_detail_screen/$movieId")
-                },
+            HomeScreen(
+                featuredMovies = featuredMovies,
+                popularMovies = popularMovies,
+                genreMovies = featuredMovies,
+                isAdmin = isAdmin,
                 onSearchTriggered = { query ->
-                    if (query.isNotEmpty()) {
-                        viewModel.searchMovies(query)
-                        navController.navigate("movie_list_screen?query=$query")
-                    }
+                    movieViewModel.searchMovies(query)
+                    navController.navigate("movie_list_screen?query=$query")
                 },
-                onAddClick = {
-                    navController.navigate("add_edit_movie?movieId=0")
+                onViewMoreClick = {
+                    movieViewModel.loadAllMoviesForList()
+                    navController.navigate("movie_list_screen?query=")
+                },
+                onMovieClick = { id ->
+                    movieViewModel.getMovieDetail(id)
+                    navController.navigate("movie_detail_screen/$id?isAdmin=false")
+                },
+                onAdminClick = {
+                    navController.navigate("admin_screen")
+                },
+                onLogoutClick = {
+                    userViewModel.logout()
+                    navController.navigate("login_screen") {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             )
         }
 
-        // 4. MOVIE LIST / SEARCH RESULT
+        // MOVIE LIST
         composable(
             route = "movie_list_screen?query={query}",
             arguments = listOf(navArgument("query") { defaultValue = "" })
-        ) { backStackEntry ->
-            val query = backStackEntry.arguments?.getString("query") ?: ""
+        ) { backStack ->
+            val query = backStack.arguments?.getString("query") ?: ""
+
             LaunchedEffect(query) {
-                if(query.isNotEmpty()) viewModel.searchMovies(query)
-                else viewModel.loadAllMoviesForList()
+                if (query.isNotEmpty()) movieViewModel.searchMovies(query)
+                else movieViewModel.loadAllMoviesForList()
             }
+
             UnifiedMovieListScreen(
                 initialQuery = query,
                 results = searchResults,
                 totalResults = searchResults.size,
-                onMovieClick = { movieId ->
-                    viewModel.getMovieDetail(movieId)
-                    navController.navigate("movie_detail_screen/$movieId")
+                onMovieClick = { id ->
+                    movieViewModel.getMovieDetail(id)
+                    navController.navigate("movie_detail_screen/$id?isAdmin=false")
                 },
-                onSearchTriggered = { newQuery ->
-                    viewModel.searchMovies(newQuery)
-                    navController.navigate("movie_list_screen?query=$newQuery") {
-                        popUpTo("movie_list_screen?query={query}") { inclusive = true }
-                    }
+                onSearchTriggered = { q ->
+                    movieViewModel.searchMovies(q)
+                    navController.navigate("movie_list_screen?query=$q")
                 }
             )
         }
 
-        // 5. MOVIE DETAIL
+        // DETAIL
         composable(
-            route = "movie_detail_screen/{movieId}",
-            arguments = listOf(navArgument("movieId") { type = NavType.IntType })
-        ) {
+            route = "movie_detail_screen/{movieId}?isAdmin={isAdmin}",
+            arguments = listOf(
+                navArgument("movieId") { type = NavType.IntType },
+                navArgument("isAdmin") {
+                    type = NavType.BoolType
+                    defaultValue = false
+                }
+            )
+        ) { backStack ->
+            val adminMode = backStack.arguments?.getBoolean("isAdmin") ?: false
+
             if (selectedMovie != null) {
                 MovieDetailScreen(
                     movie = selectedMovie!!,
+                    isAdminMode = adminMode,
                     onEditClick = {
                         navController.navigate("add_edit_movie?movieId=${selectedMovie!!.id}")
                     },
                     onDeleteClick = {
-                        viewModel.deleteMovie(selectedMovie!!.id)
+                        movieViewModel.deleteMovie(selectedMovie!!.id)
                         navController.popBackStack()
                     },
-                    onBackClick = {
-                        navController.popBackStack()
-                    }
+                    onBackClick = { navController.popBackStack() }
                 )
             } else {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
             }
         }
 
-        // 6. ADD / EDIT MOVIE FORM
+        // ADD / EDIT
         composable(
             route = "add_edit_movie?movieId={movieId}",
             arguments = listOf(navArgument("movieId") {
                 type = NavType.IntType
                 defaultValue = 0
             })
-        ) { backStackEntry ->
-            val movieId = backStackEntry.arguments?.getInt("movieId") ?: 0
+        ) {
+            val id = it.arguments?.getInt("movieId") ?: 0
             AddEditMovieScreen(
                 navController = navController,
-                viewModel = viewModel,
-                movieId = movieId
+                viewModel = movieViewModel,
+                movieId = id
+            )
+        }
+
+        // ADMIN
+        composable("admin_screen") {
+            val allMovies = (featuredMovies + popularMovies).distinctBy { it.id }
+
+            AdminScreen(
+                movies = allMovies,
+                onBackClick = { navController.popBackStack() },
+                onAddClick = {
+                    navController.navigate("add_edit_movie?movieId=0")
+                },
+                onEditClick = { id ->
+                    navController.navigate("add_edit_movie?movieId=$id")
+                },
+                onDeleteClick = { id ->
+                    movieViewModel.deleteMovie(id)
+                },
+                onMovieClick = { id ->
+                    movieViewModel.getMovieDetail(id)
+                    navController.navigate("movie_detail_screen/$id?isAdmin=true")
+                }
             )
         }
     }
