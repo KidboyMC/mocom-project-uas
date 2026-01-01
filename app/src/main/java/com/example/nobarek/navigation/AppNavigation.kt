@@ -41,16 +41,14 @@ import com.example.nobarek.screen.SeriesScreen
 import com.example.nobarek.screen.SplashScreen
 import com.example.nobarek.screen.UnifiedMovieListScreen
 import com.example.nobarek.viewmodel.MovieViewModel
-import com.example.nobarek.viewmodel.MovieViewModelFactory
 import com.example.nobarek.viewmodel.UserViewModel
-import com.example.nobarek.viewmodel.UserViewModelFactory
 import androidx.core.content.edit
 
 // --- ROOT NAVIGATION ---
 @Composable
 fun AppNavigation(
-    movieViewModelFactory: MovieViewModelFactory,
-    userViewModelFactory: UserViewModelFactory
+    movieViewModelFactory: MovieViewModel.MovieViewModelFactory,
+    userViewModelFactory: UserViewModel.UserViewModelFactory
 ) {
     val rootNavController = rememberNavController() // Main NavController
     val context = LocalContext.current
@@ -152,7 +150,7 @@ fun AppNavigation(
 @Composable
 fun MainAppScreen(
     rootNavController: NavHostController, // Logout to login screen
-    movieViewModelFactory: MovieViewModelFactory,
+    movieViewModelFactory: MovieViewModel.MovieViewModelFactory,
     userViewModel: UserViewModel
 ) {
     val homeNavController = rememberNavController() // NavController inner tab
@@ -163,6 +161,7 @@ fun MainAppScreen(
     val popularMovies by movieViewModel.popularMovies.collectAsState()
     val searchResults by movieViewModel.searchResults.collectAsState()
     val selectedMovie by movieViewModel.selectedMovie.collectAsState()
+    val favoriteMovies by movieViewModel.favoriteMovies.collectAsState()
     val isAdmin by userViewModel.isAdmin.collectAsState()
 
     val context = LocalContext.current
@@ -283,6 +282,7 @@ fun MainAppScreen(
             // PROFILE TAB
             composable(BottomNavItem.Profile.route) {
                 ProfileScreen(
+                    userViewModel = userViewModel,
                     onLogoutClick = {
                         // LOGOUT
                         sharedPrefs.edit { clear() }
@@ -329,10 +329,17 @@ fun MainAppScreen(
                 )
             ) { backStack ->
                 val adminMode = backStack.arguments?.getBoolean("isAdmin") ?: false
+                val movieId = backStack.arguments?.getInt("movieId") ?: 0
+                val isFavorite = favoriteMovies.any { it.id == movieId }
+                
                 if (selectedMovie != null) {
                     MovieDetailScreen(
                         movie = selectedMovie!!,
                         isAdminMode = adminMode,
+                        isFavorite = isFavorite,
+                        onFavoriteClick = {
+                            movieViewModel.toggleFavorite(selectedMovie!!.id, !isFavorite)
+                        },
                         onEditClick = { homeNavController.navigate("add_edit_movie?movieId=${selectedMovie!!.id}") },
                         onDeleteClick = {
                             movieViewModel.deleteMovie(selectedMovie!!.id)

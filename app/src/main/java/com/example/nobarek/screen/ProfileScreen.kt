@@ -39,6 +39,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,10 +50,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.nobarek.data.local.UserEntity
+import com.example.nobarek.viewmodel.UserViewModel
 
-// Still Placeholder
+// ✅ UPDATED - Menerima UserViewModel parameter
 @Composable
-fun ProfileScreen(onLogoutClick: () -> Unit) {
+fun ProfileScreen(
+    userViewModel: UserViewModel,
+    onLogoutClick: () -> Unit
+) {
+    val user by userViewModel.loggedInUser.collectAsState()
     val scrollState = rememberScrollState()
     val backgroundColor = Color(0xFFEAEAEA)
     val accentColor = Color(0xFFFFC107)
@@ -63,19 +71,16 @@ fun ProfileScreen(onLogoutClick: () -> Unit) {
             .verticalScroll(scrollState)
             .statusBarsPadding()
     ) {
-        // 1. HEADER
-        ProfileHeaderSection()
-
+        // 1. HEADER dengan data user real
+        ProfileHeaderSection(user)
         Spacer(modifier = Modifier.height(24.dp))
 
         // 2. PREMIUM CARD
         PremiumMemberCard(accentColor)
-
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 3. STATISTIK PENGGUNA
-        UserStatsSection()
-
+        // 3. STATISTIK PENGGUNA (Real Data)
+        UserStatsSection(user)
         Spacer(modifier = Modifier.height(24.dp))
 
         // 4. MENU SETTINGS
@@ -96,15 +101,14 @@ fun ProfileScreen(onLogoutClick: () -> Unit) {
                 isDestructive = true,
                 onClick = onLogoutClick
             )
-        }
 
-        Spacer(modifier = Modifier.height(100.dp)) // Padding bawah agar tidak tertutup navbar
+            Spacer(modifier = Modifier.height(100.dp)) // Padding bawah agar tidak tertutup navbar
+        }
     }
 }
 
-
 @Composable
-fun ProfileHeaderSection() {
+fun ProfileHeaderSection(user: UserEntity?) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -112,12 +116,13 @@ fun ProfileHeaderSection() {
         Spacer(modifier = Modifier.height(32.dp))
 
         Box(contentAlignment = Alignment.BottomEnd) {
+            // ✅ Avatar dinamis berdasarkan username
             AsyncImage(
-                model = "https://ui-avatars.com/api/?name=User+Nobarek&background=0D8ABC&color=fff&size=256",
+                model = "https://ui-avatars.com/api/?name=${user?.username ?: "User"}+Nobarek&background=0D8ABC&color=fff&size=256",
                 contentDescription = "Profile",
                 modifier = Modifier
                     .size(100.dp)
-                    .clip(RoundedCornerShape(24.dp)) // Rounded Square ala Netflix
+                    .clip(RoundedCornerShape(24.dp))
                     .border(2.dp, Color.White, RoundedCornerShape(24.dp))
             )
 
@@ -130,7 +135,7 @@ fun ProfileHeaderSection() {
                     .border(2.dp, Color.White, CircleShape)
             ) {
                 Icon(
-                    imageVector = Icons.Default.Edit,
+                    Icons.Default.Edit,
                     contentDescription = "Edit",
                     tint = Color.White,
                     modifier = Modifier.padding(6.dp)
@@ -140,16 +145,47 @@ fun ProfileHeaderSection() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // ✅ Nama dari database
         Text(
-            text = "Taufik Endutt",
+            text = user?.username ?: "User",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
+
+        // ✅ Email dari username + domain
         Text(
-            text = "taufik@nobarek.com",
+            text = "${user?.username ?: "user"}@nobarek.com",
             style = MaterialTheme.typography.bodyMedium,
             color = Color.Gray
         )
+
+        // ✅ Role indicator
+        if (user?.role == "admin") {
+            Spacer(modifier = Modifier.height(8.dp))
+            Surface(
+                color = Color(0xFFFFC107).copy(alpha = 0.2f),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.VerifiedUser,
+                        contentDescription = null,
+                        tint = Color(0xFFFFC107),
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        "ADMIN",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFFFC107)
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -178,7 +214,9 @@ fun PremiumMemberCard(accentColor: Color) {
                         tint = accentColor,
                         modifier = Modifier.size(18.dp)
                     )
+
                     Spacer(modifier = Modifier.width(8.dp))
+
                     Text(
                         text = "PREMIUM MEMBER",
                         color = accentColor,
@@ -187,6 +225,7 @@ fun PremiumMemberCard(accentColor: Color) {
                         letterSpacing = 1.sp
                     )
                 }
+
                 Text(
                     text = "Upgrade for 4K Quality",
                     color = Color.White,
@@ -207,16 +246,17 @@ fun PremiumMemberCard(accentColor: Color) {
 }
 
 @Composable
-fun UserStatsSection() {
+fun UserStatsSection(user: UserEntity?) {
+    // ✅ Statistik real dari database (placeholder untuk saat ini)
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        StatItem("120", "Watched")
-        StatItem("45", "Favorites")
-        StatItem("12", "Reviews")
+        StatItem("0", "Watched")
+        StatItem("0", "Favorites")
+        StatItem("0", "Reviews")
     }
 }
 
@@ -229,6 +269,7 @@ fun StatItem(value: String, label: String) {
             fontWeight = FontWeight.Bold,
             color = Color.Black
         )
+
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
@@ -270,7 +311,7 @@ fun ProfileMenuItem(
         ) {
             // Icon Box
             Surface(
-                color = if(isDestructive) Color(0xFFFFEBEE) else Color(0xFFF5F5F5),
+                color = if (isDestructive) Color(0xFFFFEBEE) else Color(0xFFF5F5F5),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.size(40.dp)
             ) {
@@ -278,7 +319,7 @@ fun ProfileMenuItem(
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = if(isDestructive) Color.Red else Color.Black,
+                        tint = if (isDestructive) Color.Red else Color.Black,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -291,8 +332,9 @@ fun ProfileMenuItem(
                     text = title,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
-                    color = if(isDestructive) Color.Red else Color.Black
+                    color = if (isDestructive) Color.Red else Color.Black
                 )
+
                 if (subtitle.isNotEmpty()) {
                     Text(
                         text = subtitle,

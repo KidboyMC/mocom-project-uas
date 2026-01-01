@@ -3,37 +3,37 @@ package com.example.nobarek.data.local
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import kotlinx.coroutines.flow.Flow
+import androidx.room.Update
 
 @Dao
 interface MovieDao {
-    // Select All Data
-    @Query("SELECT * FROM movies")
-    fun getAllMovies(): Flow<List<MovieEntity>>
+    @Insert
+    suspend fun insertMovie(movie: MovieEntity)
 
-    // Select Data by Category (Featured/Popular)
-    @Query("SELECT * FROM movies WHERE type = :category")
-    suspend fun getMoviesByType(category: String): List<MovieEntity>
+    @Insert
+    suspend fun insertAll(movies: List<MovieEntity>)
 
-    // Search Movies
-    @Query("SELECT * FROM movies WHERE title LIKE '%' || :query || '%'")
+    @Update
+    suspend fun updateMovie(movie: MovieEntity)
+
+    @Delete
+    suspend fun deleteMovie(movie: MovieEntity)
+
+    @Query("SELECT * FROM movies WHERE type = :type")
+    suspend fun getMoviesByType(type: String): List<MovieEntity>
+
+    @Query("SELECT * FROM movies WHERE title LIKE '%' || :query || '%' OR genres LIKE '%' || :query || '%'")
     suspend fun searchMovies(query: String): List<MovieEntity>
 
-    // Select Movie Detail
     @Query("SELECT * FROM movies WHERE id = :id")
     suspend fun getMovieById(id: Int): MovieEntity?
 
-    // Add Data (Multiple Data)
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(movies: List<MovieEntity>)
+    // ✅ BARU - Query untuk favorit
+    @Query("SELECT * FROM movies WHERE isFavorite = 1")
+    suspend fun getFavoriteMovies(): List<MovieEntity>
 
-    // Add Movie
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertMovie(movie: MovieEntity)
-
-    // Delete Movie
-    @Delete
-    suspend fun deleteMovie(movie: MovieEntity)
+    // ✅ BARU - Update status favorit
+    @Query("UPDATE movies SET isFavorite = :isFavorite WHERE id = :movieId")
+    suspend fun updateFavoriteStatus(movieId: Int, isFavorite: Boolean)
 }

@@ -28,17 +28,16 @@ import coil.compose.AsyncImage
 import com.example.nobarek.viewmodel.MovieViewModel
 import kotlin.random.Random
 
-// Still Placeholder
+// ✅ UPDATED - Menampilkan favorit movies yang actual
 @Composable
 fun FavoriteScreen(
     viewModel: MovieViewModel,
     onMovieClick: (Int) -> Unit
 ) {
-    val favoriteList by viewModel.popularMovies.collectAsState()
+    val favoriteList by viewModel.favoriteMovies.collectAsState()
     val lightBackground = Color(0xFFEAEAEA)
     val cardBackground = Color.White
     val accentColor = Color(0xFFFFC107)
-
     var selectedFilter by remember { mutableStateOf("All") }
     val filters = listOf("All", "Movies", "Series")
 
@@ -46,7 +45,6 @@ fun FavoriteScreen(
         contentWindowInsets = WindowInsets(0.dp),
         containerColor = lightBackground,
     ) { paddingValues ->
-
         if (favoriteList.isEmpty()) {
             EmptyStateLightUI()
         } else {
@@ -56,7 +54,6 @@ fun FavoriteScreen(
                     .padding(paddingValues)
                     .fillMaxSize()
             ) {
-
                 item {
                     Column(
                         modifier = Modifier
@@ -69,8 +66,9 @@ fun FavoriteScreen(
                             fontWeight = FontWeight.Black,
                             color = Color.Black
                         )
+
                         Text(
-                            text = "Continue where you left off",
+                            text = "Total: ${favoriteList.size} film favorit",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color.Gray
                         )
@@ -111,6 +109,9 @@ fun FavoriteScreen(
                             accentColor = accentColor,
                             onClick = { onMovieClick(favoriteList.first().id) }
                         )
+                    }
+
+                    item {
                         Spacer(modifier = Modifier.height(32.dp))
                     }
                 }
@@ -129,6 +130,7 @@ fun FavoriteScreen(
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
                         )
+
                         Text(
                             text = "${favoriteList.size} items",
                             color = Color.Gray,
@@ -141,16 +143,20 @@ fun FavoriteScreen(
                     LightWatchlistRow(
                         movie = movie,
                         cardColor = cardBackground,
+                        onRemoveFavorite = {
+                            viewModel.toggleFavorite(movie.id, false)
+                        },
                         onClick = { onMovieClick(movie.id) }
                     )
+                }
+
+                item {
                     Spacer(modifier = Modifier.height(12.dp))
                 }
             }
         }
     }
 }
-
-
 
 @Composable
 fun BigContinueWatchingCardLight(movie: MovieItem, accentColor: Color, onClick: () -> Unit) {
@@ -162,7 +168,6 @@ fun BigContinueWatchingCardLight(movie: MovieItem, accentColor: Color, onClick: 
             .padding(horizontal = 16.dp)
             .clickable { onClick() }
     ) {
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -185,19 +190,20 @@ fun BigContinueWatchingCardLight(movie: MovieItem, accentColor: Color, onClick: 
                 Icon(
                     imageVector = Icons.Default.PlayCircleFilled,
                     contentDescription = null,
-                    tint = accentColor, // Icon Kuning
+                    tint = accentColor,
                     modifier = Modifier.size(64.dp)
                 )
             }
+
             LinearProgressIndicator(
-            progress = { randomProgress },
-            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(6.dp)
-                                .align(Alignment.BottomCenter),
-            color = accentColor,
-            trackColor = Color.White.copy(alpha = 0.5f),
-            strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+                progress = { randomProgress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .align(Alignment.BottomCenter),
+                color = accentColor,
+                trackColor = Color.White.copy(alpha = 0.5f),
+                strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
             )
         }
 
@@ -215,12 +221,14 @@ fun BigContinueWatchingCardLight(movie: MovieItem, accentColor: Color, onClick: 
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
+
                 Text(
                     text = "S1:E5 • 24m remaining",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
             }
+
             IconButton(onClick = { }) {
                 Icon(Icons.Default.MoreVert, contentDescription = null, tint = Color.Gray)
             }
@@ -229,7 +237,12 @@ fun BigContinueWatchingCardLight(movie: MovieItem, accentColor: Color, onClick: 
 }
 
 @Composable
-fun LightWatchlistRow(movie: MovieItem, cardColor: Color, onClick: () -> Unit) {
+fun LightWatchlistRow(
+    movie: MovieItem,
+    cardColor: Color,
+    onRemoveFavorite: () -> Unit = {},
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -265,7 +278,9 @@ fun LightWatchlistRow(movie: MovieItem, cardColor: Color, onClick: () -> Unit) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+
             Spacer(modifier = Modifier.height(4.dp))
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.PlayArrow, null, tint = Color.Gray, modifier = Modifier.size(12.dp))
                 Spacer(modifier = Modifier.width(4.dp))
@@ -284,7 +299,7 @@ fun LightWatchlistRow(movie: MovieItem, cardColor: Color, onClick: () -> Unit) {
                 .padding(end = 8.dp),
             contentAlignment = Alignment.Center
         ) {
-            IconButton(onClick = { }) {
+            IconButton(onClick = onRemoveFavorite) {
                 Icon(
                     imageVector = Icons.Default.BookmarkRemove,
                     contentDescription = "Remove",
@@ -326,12 +341,21 @@ fun EmptyStateLightUI() {
             tint = Color.Gray,
             modifier = Modifier.size(80.dp)
         )
+
         Spacer(modifier = Modifier.height(16.dp))
+
         Text(
             text = "Your library is empty",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = Color.Gray
+        )
+
+        Text(
+            text = "Add movies to your favorites to see them here",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray,
+            modifier = Modifier.padding(horizontal = 32.dp)
         )
     }
 }
