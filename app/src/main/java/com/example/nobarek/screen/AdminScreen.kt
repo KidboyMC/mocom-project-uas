@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -53,17 +54,20 @@ fun AdminScreen(
     onDeleteClick: (Int) -> Unit,
     onMovieClick: (Int) -> Unit
 ) {
+    val backgroundColor = Color(0xFFEAEAEA)
+
     Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shadowElevation = 4.dp,
-                color = Color.White
+                color = backgroundColor,
+                shadowElevation = 0.dp
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 8.dp, end = 16.dp, top = 48.dp, bottom = 16.dp),
+                        .padding(start = 8.dp, end = 16.dp, top = 32.dp, bottom = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = onBackClick) {
@@ -81,7 +85,8 @@ fun AdminScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddClick,
-                containerColor = MaterialTheme.colorScheme.primary
+                containerColor = Color(0xFFFFC107),
+                contentColor = Color.White
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Movie")
             }
@@ -90,7 +95,7 @@ fun AdminScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFEEEEEE))
+                .background(backgroundColor)
                 .padding(paddingValues)
                 .navigationBarsPadding()
         ) {
@@ -100,7 +105,7 @@ fun AdminScreen(
                 color = Color.Gray,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
-            
+
             if (movies.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -181,7 +186,7 @@ fun AdminMovieCard(
                             modifier = Modifier.size(18.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(20.dp))
                     IconButton(
                         onClick = onDeleteClick,
                         modifier = Modifier

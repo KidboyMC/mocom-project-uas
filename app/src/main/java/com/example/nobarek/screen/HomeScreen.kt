@@ -10,10 +10,10 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -99,6 +99,7 @@ fun HomeScreen(
         }
     }
     Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
         topBar = { 
             Column(
                 modifier = Modifier
@@ -108,7 +109,7 @@ fun HomeScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, top = 64.dp),
+                        .padding(start = 16.dp, end = 16.dp, top = 28.dp, bottom = 28.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -116,7 +117,7 @@ fun HomeScreen(
                         query = searchQuery,
                         onQueryChange = { newText -> searchQuery = newText },
                         onSearch = {
-                            // Panggil navigasi ke halaman Search Result di sini
+                            // Navigation to result page
                             onSearchTriggered(searchQuery)
                         },
                         modifier = Modifier.weight(1f)
@@ -137,24 +138,23 @@ fun HomeScreen(
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                             )
                         }
-                    }
-                    // Logout Button
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFFEF5350),
-                        modifier = Modifier.clickable { onLogoutClick() }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFFEF5350),
+                            modifier = Modifier.clickable { onLogoutClick() }
                         ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                                contentDescription = "Logout",
-                                tint = Color.White,
-                                modifier = Modifier.size(16.dp)
-                            )
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                    contentDescription = "Logout",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -165,8 +165,7 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFEAEAEA))
-                .padding(paddingValues)
-                .navigationBarsPadding(),
+                .padding(paddingValues),
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
             // SECTION: FEATURED
@@ -213,7 +212,8 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 GenreHeader(
                     selectedGenre = browseGenre, 
-                    onGenreSelected = { newGenre -> browseGenre = newGenre }
+                    onGenreSelected = { newGenre -> browseGenre = newGenre },
+                    onViewMoreClick = { onViewMoreClick() }
                 )
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -260,7 +260,11 @@ fun SectionHeader(title: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun GenreHeader(selectedGenre: String, onGenreSelected: (String) -> Unit) {
+fun GenreHeader(
+    selectedGenre: String,
+    onGenreSelected: (String) -> Unit,
+    onViewMoreClick: () -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
     val genres = listOf("Action", "Drama", "Comedy", "Horror", "Sci-Fi", "Fantasy", "Romance", "Thriller")
     
@@ -312,7 +316,8 @@ fun GenreHeader(selectedGenre: String, onGenreSelected: (String) -> Unit) {
             Surface(
                 shape = RoundedCornerShape(20.dp),
                 border = BorderStroke(1.dp, Color.Gray),
-                color = Color.Transparent
+                color = Color.Transparent,
+                modifier = Modifier.clickable { onViewMoreClick() }
             ) {
                 Text(
                     text = "View More",

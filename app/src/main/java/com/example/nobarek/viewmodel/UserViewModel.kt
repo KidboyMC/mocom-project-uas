@@ -31,7 +31,14 @@ class UserViewModel(private val repository: UserRepository) : ViewModel() {
             repository.seedDefaultUsers()
         }
     }
-    
+
+    fun forceLogin(username: String, role: String) {
+        // Kita langsung set state user sebagai login
+        // Asumsikan User adalah data class Anda
+        _loggedInUser.value = UserEntity(username = username, password = "", role = role)
+        _isAdmin.value = (role == "admin")
+    }
+
     fun login(username: String, password: String) {
         viewModelScope.launch {
             if (username.isBlank() || password.isBlank()) {

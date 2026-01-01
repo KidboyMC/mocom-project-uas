@@ -4,8 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,10 +12,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -29,12 +25,10 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -123,11 +117,6 @@ fun MovieDetailScreen(
                     color = Color.Black,
                     lineHeight = 20.sp
                 )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Cast Section
-                CastSection(castList = movie.cast)
             }
         }
 
@@ -219,57 +208,6 @@ fun StatsSection(rating: Double, duration: String) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = "Duration", fontWeight = FontWeight.Bold, fontSize = 12.sp)
             Text(text = duration, color = Color(0xFFFFC107), fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun CastSection(castList: List<CastMember>) {
-    // FlowRow to have items automatically drop down if not loaded
-    FlowRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        maxItemsInEachRow = 2
-    ) {
-        castList.forEach { actor ->
-            CastChip(actor)
-            Spacer(modifier = Modifier.width(12.dp))
-        }
-    }
-}
-
-@Composable
-fun CastChip(actor: CastMember) {
-    Surface(
-        color = Color(0xFFE0E0E0),
-        shape = RoundedCornerShape(50.dp),
-        modifier = Modifier.height(50.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(end = 16.dp)
-        ) {
-            // Cast Img
-            AsyncImage(
-                model = actor.photoUrl,
-                contentDescription = actor.name,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(CircleShape)
-            )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Cast Name
-            Text(
-                text = actor.name,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.Black
-            )
         }
     }
 }
