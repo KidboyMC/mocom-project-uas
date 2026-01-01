@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PlayCircleFilled
 import androidx.compose.material3.*
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,6 +28,7 @@ import coil.compose.AsyncImage
 import com.example.nobarek.viewmodel.MovieViewModel
 import kotlin.random.Random
 
+// Still Placeholder
 @Composable
 fun FavoriteScreen(
     viewModel: MovieViewModel,
@@ -41,6 +43,7 @@ fun FavoriteScreen(
     val filters = listOf("All", "Movies", "Series")
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
         containerColor = lightBackground,
     ) { paddingValues ->
 
@@ -48,7 +51,7 @@ fun FavoriteScreen(
             EmptyStateLightUI()
         } else {
             LazyColumn(
-                contentPadding = PaddingValues(bottom = 100.dp),
+                contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp),
                 modifier = Modifier
                     .padding(paddingValues)
                     .fillMaxSize()
@@ -58,7 +61,7 @@ fun FavoriteScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 32.dp, bottom = 24.dp, start = 16.dp, end = 16.dp)
+                            .padding(bottom = 24.dp, start = 16.dp, end = 16.dp)
                     ) {
                         Text(
                             text = "My Favorite",
@@ -138,7 +141,6 @@ fun FavoriteScreen(
                     LightWatchlistRow(
                         movie = movie,
                         cardColor = cardBackground,
-                        accentColor = accentColor,
                         onClick = { onMovieClick(movie.id) }
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -188,13 +190,14 @@ fun BigContinueWatchingCardLight(movie: MovieItem, accentColor: Color, onClick: 
                 )
             }
             LinearProgressIndicator(
-                progress = randomProgress,
-                color = accentColor,
-                trackColor = Color.White.copy(alpha = 0.5f),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .align(Alignment.BottomCenter)
+            progress = { randomProgress },
+            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .align(Alignment.BottomCenter),
+            color = accentColor,
+            trackColor = Color.White.copy(alpha = 0.5f),
+            strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
             )
         }
 
@@ -226,7 +229,7 @@ fun BigContinueWatchingCardLight(movie: MovieItem, accentColor: Color, onClick: 
 }
 
 @Composable
-fun LightWatchlistRow(movie: MovieItem, cardColor: Color, accentColor: Color, onClick: () -> Unit) {
+fun LightWatchlistRow(movie: MovieItem, cardColor: Color, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()

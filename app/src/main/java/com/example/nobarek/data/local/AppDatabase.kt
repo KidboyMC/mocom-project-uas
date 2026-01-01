@@ -18,8 +18,8 @@ abstract class AppDatabase : RoomDatabase() {
         
         // Migration from version 1 to 2: Add users table
         private val MIGRATION_1_2 = object : Migration(1, 2) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL(
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
                     """
                     CREATE TABLE IF NOT EXISTS users (
                         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,

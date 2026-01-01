@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -65,22 +64,22 @@ fun UnifiedMovieListScreen(
     // Search State
     var searchQuery by remember { mutableStateOf(initialQuery) }
     val focusManager = LocalFocusManager.current
-    
+
     // Sort and Filter State
     var selectedSortOption by remember { mutableStateOf("Name (A-Z)") }
     var selectedGenreFilter by remember { mutableStateOf("All") }
-    
+
     // Apply sorting and filtering
     val sortedAndFilteredResults = remember(results, selectedSortOption, selectedGenreFilter) {
         var filtered = results
-        
+
         // Apply genre filter
         if (selectedGenreFilter != "All") {
             filtered = filtered.filter { movie ->
                 movie.genres.contains(selectedGenreFilter)
             }
         }
-        
+
         // Apply sorting
         when (selectedSortOption) {
             "Name (A-Z)" -> filtered.sortedBy { it.title }
@@ -97,12 +96,12 @@ fun UnifiedMovieListScreen(
     val isSearchMode = searchQuery.isNotEmpty()
     val pageTitle = if (isSearchMode) "Search Results: $searchQuery" else "Movie List"
 
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFEEEEEE))
-            .padding(top = 64.dp, start = 16.dp, end = 16.dp)
-            .navigationBarsPadding()
+            .background(Color(0xFFEAEAEA))
+            .padding(top = 28.dp, start = 16.dp, end = 16.dp)
     ) {
         // Search Bar
         SearchBar(
@@ -175,8 +174,6 @@ fun UnifiedMovieListScreen(
             currentCount = results.size,
             totalCount = totalResults
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
@@ -301,7 +298,11 @@ fun MovieGridItem(movie: MovieResult, onClick: () -> Unit) {
 
 @Composable
 fun PaginationFooter(currentPage: Int, totalPages: Int, currentCount: Int, totalCount: Int) {
-    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier = Modifier
+            .fillMaxWidth()
+            .padding(top= 12.dp, bottom = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Text(text = "Showing $currentCount of $totalCount", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
         Spacer(modifier = Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

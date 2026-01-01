@@ -3,7 +3,7 @@ package com.example.nobarek.data.repository
 import com.example.nobarek.data.local.UserDao
 import com.example.nobarek.data.local.UserEntity
 
-class userUserRepository(private val userDao: UserDao) {
+class UserRepository(private val userDao: UserDao) {
     
     // Login - validate username and password
     suspend fun login(username: String, password: String): UserEntity? {

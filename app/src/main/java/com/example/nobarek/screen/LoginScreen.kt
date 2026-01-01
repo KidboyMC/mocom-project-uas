@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -53,7 +54,7 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFEEEEEE))
+            .background(Color(0xFFEAEAEA))
             .navigationBarsPadding(),
         contentAlignment = Alignment.Center
     ) {
@@ -136,7 +137,11 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFFC107), // Button background color
+                    contentColor = Color.White // Text/icon color
+                ),
             ) {
                 Text(
                     text = "Login",
@@ -146,14 +151,6 @@ fun LoginScreen(
             }
             
             Spacer(modifier = Modifier.height(24.dp))
-            
-            // Hint text
-            Text(
-                text = "Default users:\nadmin/admin123 (Admin)\nuser/user123 (User)",
-                fontSize = 12.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(top = 16.dp)
-            )
             
             Spacer(modifier = Modifier.height(16.dp))
             
