@@ -12,6 +12,6 @@ data class MovieEntity(
     val description: String,
     val genres: String,
     val duration: String,
-    val type: String, // "featured" atau "popular"
-    val isFavorite: Boolean = false // ✅ BARU - untuk tracking favorit
+    val type: String, // "featured" or "popular"
+    val isFavorite: Boolean = false
 )

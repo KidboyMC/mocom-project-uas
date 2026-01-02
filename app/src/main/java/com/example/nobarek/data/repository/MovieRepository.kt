@@ -42,12 +42,12 @@ class MovieRepository(private val movieDao: MovieDao) {
         movieDao.deleteMovie(movie)
     }
 
-    // ✅ BARU - Get Favorit Movies
+    // Get Favorite Movies
     suspend fun getFavoriteMovies(): List<MovieEntity> {
         return movieDao.getFavoriteMovies()
     }
 
-    // ✅ BARU - Toggle Favorit Status
+    // Toggle Favorite Status
     suspend fun toggleFavorite(movieId: Int, isFavorite: Boolean) {
         movieDao.updateFavoriteStatus(movieId, isFavorite)
     }

@@ -61,8 +61,8 @@ data class CastMember(
 fun MovieDetailScreen(
     movie: Movie,
     isAdminMode: Boolean = false,
-    isFavorite: Boolean = false, // ✅ BARU
-    onFavoriteClick: () -> Unit = {}, // ✅ BARU
+    isFavorite: Boolean = false,
+    onFavoriteClick: () -> Unit = {},
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onBackClick: () -> Unit
@@ -140,7 +140,7 @@ fun MovieDetailScreen(
             }
 
             Row {
-                // ✅ BARU - Favorite Button
+                // Favorite Button
                 IconButton(
                     onClick = onFavoriteClick,
                     modifier = Modifier

@@ -28,13 +28,14 @@ import coil.compose.AsyncImage
 import com.example.nobarek.viewmodel.MovieViewModel
 import kotlin.random.Random
 
-// ✅ UPDATED - Menampilkan favorit movies yang actual
 @Composable
 fun FavoriteScreen(
+    favoriteMovies: List<MovieItem>,
     viewModel: MovieViewModel,
-    onMovieClick: (Int) -> Unit
+    onMovieClick: (Int) -> Unit,
+    onRemoveClick: (MovieItem) -> Unit
 ) {
-    val favoriteList by viewModel.favoriteMovies.collectAsState()
+    val favoriteList = favoriteMovies
     val lightBackground = Color(0xFFEAEAEA)
     val cardBackground = Color.White
     val accentColor = Color(0xFFFFC107)
@@ -68,7 +69,7 @@ fun FavoriteScreen(
                         )
 
                         Text(
-                            text = "Total: ${favoriteList.size} film favorit",
+                            text = "${favoriteList.size} movies in your watchlist",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color.Gray
                         )
@@ -139,7 +140,7 @@ fun FavoriteScreen(
                     }
                 }
 
-                items(favoriteList.drop(1)) { movie ->
+                items(favoriteList) { movie ->
                     LightWatchlistRow(
                         movie = movie,
                         cardColor = cardBackground,
@@ -252,7 +253,7 @@ fun LightWatchlistRow(
             .clip(RoundedCornerShape(12.dp))
             .clickable { onClick() }
     ) {
-        // Poster Kecil
+        // Small Poster
         AsyncImage(
             model = movie.posterUrl,
             contentDescription = null,
@@ -285,7 +286,7 @@ fun LightWatchlistRow(
                 Icon(Icons.Default.PlayArrow, null, tint = Color.Gray, modifier = Modifier.size(12.dp))
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Movie • 2h 10m",
+                    text = movie.duration,
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
@@ -308,6 +309,7 @@ fun LightWatchlistRow(
             }
         }
     }
+    Spacer(modifier = Modifier.height(12.dp))
 }
 
 @Composable

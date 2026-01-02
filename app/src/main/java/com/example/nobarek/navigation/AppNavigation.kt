@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.core.content.edit
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -42,7 +43,6 @@ import com.example.nobarek.screen.SplashScreen
 import com.example.nobarek.screen.UnifiedMovieListScreen
 import com.example.nobarek.viewmodel.MovieViewModel
 import com.example.nobarek.viewmodel.UserViewModel
-import androidx.core.content.edit
 
 // --- ROOT NAVIGATION ---
 @Composable
@@ -214,6 +214,10 @@ fun MainAppScreen(
                     popularMovies = popularMovies,
                     genreMovies = featuredMovies,
                     isAdmin = isAdmin,
+
+                    // 1. MASUKKAN INI
+                    viewModel = movieViewModel,
+
                     onSearchTriggered = { query ->
                         movieViewModel.searchMovies(query)
                         homeNavController.navigate("movie_list_screen?query=$query")
@@ -228,10 +232,8 @@ fun MainAppScreen(
                     },
                     onAdminClick = { homeNavController.navigate("admin_screen") },
                     onLogoutClick = {
-                        // LOGIC LOGOUT: Panggil rootNavController untuk keluar dari Main App
-                        sharedPrefs.edit { clear() } // Hapus semua data prefs
+                        sharedPrefs.edit { clear() }
                         userViewModel.logout()
-
                         rootNavController.navigate("login_screen") {
                             popUpTo("main_app") { inclusive = true }
                         }
@@ -271,10 +273,14 @@ fun MainAppScreen(
             // FAVORITE TAB
             composable(BottomNavItem.Favorite.route) {
                 FavoriteScreen(
+                    favoriteMovies = favoriteMovies,
                     viewModel = movieViewModel,
                     onMovieClick = { id ->
                         movieViewModel.getMovieDetail(id)
                         homeNavController.navigate("movie_detail_screen/$id?isAdmin=$isAdmin")
+                    },
+                    onRemoveClick = { movie ->
+                        movieViewModel.toggleFavorite(movie.id, false)
                     }
                 )
             }
@@ -282,6 +288,7 @@ fun MainAppScreen(
             // PROFILE TAB
             composable(BottomNavItem.Profile.route) {
                 ProfileScreen(
+                    favoriteCount = favoriteMovies.size,
                     userViewModel = userViewModel,
                     onLogoutClick = {
                         // LOGOUT
@@ -329,17 +336,28 @@ fun MainAppScreen(
                 )
             ) { backStack ->
                 val adminMode = backStack.arguments?.getBoolean("isAdmin") ?: false
-                val movieId = backStack.arguments?.getInt("movieId") ?: 0
-                val isFavorite = favoriteMovies.any { it.id == movieId }
-                
+                val favoriteMovies by movieViewModel.favoriteMovies.collectAsState()
+
                 if (selectedMovie != null) {
+                    val isFav = favoriteMovies.any { it.title == selectedMovie!!.title }
+
                     MovieDetailScreen(
                         movie = selectedMovie!!,
                         isAdminMode = adminMode,
-                        isFavorite = isFavorite,
+                        isFavorite = isFav,
+
                         onFavoriteClick = {
-                            movieViewModel.toggleFavorite(selectedMovie!!.id, !isFavorite)
+                            if (isFav) {
+                                val duplicates = favoriteMovies.filter { it.title == selectedMovie!!.title }
+                                duplicates.forEach { item ->
+                                    movieViewModel.toggleFavorite(item.id, false)
+                                }
+                                movieViewModel.toggleFavorite(selectedMovie!!.id, false)
+                            } else {
+                                movieViewModel.toggleFavorite(selectedMovie!!.id, true)
+                            }
                         },
+
                         onEditClick = { homeNavController.navigate("add_edit_movie?movieId=${selectedMovie!!.id}") },
                         onDeleteClick = {
                             movieViewModel.deleteMovie(selectedMovie!!.id)

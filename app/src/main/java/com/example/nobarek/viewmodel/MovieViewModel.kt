@@ -59,7 +59,9 @@ class MovieViewModel(private val repository: MovieRepository) : ViewModel() {
     // ✅ BARU - Load Favorite Movies
     private fun loadFavoriteMovies() {
         viewModelScope.launch {
-            val favorites = repository.getFavoriteMovies().map { entity ->
+            val favorites = repository.getFavoriteMovies()
+                .distinctBy { it.title }
+                .map { entity ->
                 MovieItem(entity.id, entity.title, entity.rating, entity.posterUrl, entity.genres.split(","), entity.duration)
             }
             _favoriteMovies.value = favorites
