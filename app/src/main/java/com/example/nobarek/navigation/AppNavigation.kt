@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.core.content.edit
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -41,16 +42,13 @@ import com.example.nobarek.screen.SeriesScreen
 import com.example.nobarek.screen.SplashScreen
 import com.example.nobarek.screen.UnifiedMovieListScreen
 import com.example.nobarek.viewmodel.MovieViewModel
-import com.example.nobarek.viewmodel.MovieViewModelFactory
 import com.example.nobarek.viewmodel.UserViewModel
-import com.example.nobarek.viewmodel.UserViewModelFactory
-import androidx.core.content.edit
 
 // --- ROOT NAVIGATION ---
 @Composable
 fun AppNavigation(
-    movieViewModelFactory: MovieViewModelFactory,
-    userViewModelFactory: UserViewModelFactory
+    movieViewModelFactory: MovieViewModel.MovieViewModelFactory,
+    userViewModelFactory: UserViewModel.UserViewModelFactory
 ) {
     val rootNavController = rememberNavController() // Main NavController
     val context = LocalContext.current
@@ -152,7 +150,7 @@ fun AppNavigation(
 @Composable
 fun MainAppScreen(
     rootNavController: NavHostController, // Logout to login screen
-    movieViewModelFactory: MovieViewModelFactory,
+    movieViewModelFactory: MovieViewModel.MovieViewModelFactory,
     userViewModel: UserViewModel
 ) {
     val homeNavController = rememberNavController() // NavController inner tab
@@ -163,6 +161,7 @@ fun MainAppScreen(
     val popularMovies by movieViewModel.popularMovies.collectAsState()
     val searchResults by movieViewModel.searchResults.collectAsState()
     val selectedMovie by movieViewModel.selectedMovie.collectAsState()
+    val favoriteMovies by movieViewModel.favoriteMovies.collectAsState()
     val isAdmin by userViewModel.isAdmin.collectAsState()
 
     val context = LocalContext.current
@@ -215,6 +214,10 @@ fun MainAppScreen(
                     popularMovies = popularMovies,
                     genreMovies = featuredMovies,
                     isAdmin = isAdmin,
+
+                    // 1. MASUKKAN INI
+                    viewModel = movieViewModel,
+
                     onSearchTriggered = { query ->
                         movieViewModel.searchMovies(query)
                         homeNavController.navigate("movie_list_screen?query=$query")
@@ -229,10 +232,8 @@ fun MainAppScreen(
                     },
                     onAdminClick = { homeNavController.navigate("admin_screen") },
                     onLogoutClick = {
-                        // LOGIC LOGOUT: Panggil rootNavController untuk keluar dari Main App
-                        sharedPrefs.edit { clear() } // Hapus semua data prefs
+                        sharedPrefs.edit { clear() }
                         userViewModel.logout()
-
                         rootNavController.navigate("login_screen") {
                             popUpTo("main_app") { inclusive = true }
                         }
@@ -272,10 +273,14 @@ fun MainAppScreen(
             // FAVORITE TAB
             composable(BottomNavItem.Favorite.route) {
                 FavoriteScreen(
+                    favoriteMovies = favoriteMovies,
                     viewModel = movieViewModel,
                     onMovieClick = { id ->
                         movieViewModel.getMovieDetail(id)
                         homeNavController.navigate("movie_detail_screen/$id?isAdmin=$isAdmin")
+                    },
+                    onRemoveClick = { movie ->
+                        movieViewModel.toggleFavorite(movie.id, false)
                     }
                 )
             }
@@ -283,6 +288,8 @@ fun MainAppScreen(
             // PROFILE TAB
             composable(BottomNavItem.Profile.route) {
                 ProfileScreen(
+                    favoriteCount = favoriteMovies.size,
+                    userViewModel = userViewModel,
                     onLogoutClick = {
                         // LOGOUT
                         sharedPrefs.edit { clear() }
@@ -329,10 +336,28 @@ fun MainAppScreen(
                 )
             ) { backStack ->
                 val adminMode = backStack.arguments?.getBoolean("isAdmin") ?: false
+                val favoriteMovies by movieViewModel.favoriteMovies.collectAsState()
+
                 if (selectedMovie != null) {
+                    val isFav = favoriteMovies.any { it.title == selectedMovie!!.title }
+
                     MovieDetailScreen(
                         movie = selectedMovie!!,
                         isAdminMode = adminMode,
+                        isFavorite = isFav,
+
+                        onFavoriteClick = {
+                            if (isFav) {
+                                val duplicates = favoriteMovies.filter { it.title == selectedMovie!!.title }
+                                duplicates.forEach { item ->
+                                    movieViewModel.toggleFavorite(item.id, false)
+                                }
+                                movieViewModel.toggleFavorite(selectedMovie!!.id, false)
+                            } else {
+                                movieViewModel.toggleFavorite(selectedMovie!!.id, true)
+                            }
+                        },
+
                         onEditClick = { homeNavController.navigate("add_edit_movie?movieId=${selectedMovie!!.id}") },
                         onDeleteClick = {
                             movieViewModel.deleteMovie(selectedMovie!!.id)

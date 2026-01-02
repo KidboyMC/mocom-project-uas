@@ -20,10 +20,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.DropdownMenu
@@ -34,6 +37,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.nobarek.viewmodel.MovieViewModel
 
 // DATA MODELS
 data class MovieItem(
@@ -66,6 +71,7 @@ fun HomeScreen(
     popularMovies: List<MovieItem>,
     genreMovies: List<MovieItem>,
     isAdmin: Boolean,
+    viewModel: MovieViewModel,
     onSearchTriggered: (String) -> Unit,
     onMovieClick: (Int) -> Unit,
     onViewMoreClick: () -> Unit,
@@ -76,7 +82,7 @@ fun HomeScreen(
     var selectedGenre by remember { mutableStateOf("All") }
     var browseGenre by remember { mutableStateOf("Action") }
     var selectedRating by remember { mutableStateOf("All") }
-    
+    val favoriteMovies by viewModel.favoriteMovies.collectAsState()
     // Filter popular movies based on selected filters
     val filteredPopularMovies = remember(popularMovies, selectedGenre, selectedRating) {
         popularMovies.filter { movie ->
@@ -176,7 +182,13 @@ fun HomeScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
                     items(featuredMovies) { movie ->
-                        FeaturedMovieCard(movie, onClick = { onMovieClick(movie.id) })
+                        val isFav = favoriteMovies.any { it.title == movie.title }
+                        FeaturedMovieCard(
+                            movie = movie,
+                            isFavorite = isFav,
+                            onFavoriteClick = { viewModel.toggleFavorite(movie.id, !isFav) },
+                            onClick = { onMovieClick(movie.id) }
+                        )
                     }
                 }
             }
@@ -186,7 +198,14 @@ fun HomeScreen(
                 SectionHeader(title = "Popular", onClick = { onViewMoreClick() }) // Trigger View More
             }
             items(filteredPopularMovies) { movie ->
-                PopularMovieItem(movie, onClick = { onMovieClick(movie.id) }) // Trigger Click
+                val isFav = favoriteMovies.any { it.title == movie.title }
+
+                PopularMovieItem(
+                    movie = movie,
+                    isFavorite = isFav,
+                    onFavoriteClick = { viewModel.toggleFavorite(movie.id, !isFav) },
+                    onClick = { onMovieClick(movie.id) }
+                ) // Trigger Click
             }
             
             // Show message if no movies match the filter
@@ -220,7 +239,13 @@ fun HomeScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
                     items(filteredGenreMovies) { movie ->
-                        FeaturedMovieCard(movie, onClick = { onMovieClick(movie.id) }) // Re-use card yang sama dengan featured
+                        val isFav = favoriteMovies.any { it.title == movie.title }
+                        FeaturedMovieCard(
+                            movie = movie,
+                            isFavorite = isFav,
+                            onFavoriteClick = { viewModel.toggleFavorite(movie.id, !isFav) },
+                            onClick = { onMovieClick(movie.id) }
+                        )
                     }
                 }
             }
@@ -331,28 +356,49 @@ fun GenreHeader(
 
 // MAIN CARD
 @Composable
-fun FeaturedMovieCard(movie: MovieItem, onClick: () -> Unit) {
+fun FeaturedMovieCard(
+    movie: MovieItem,
+    isFavorite: Boolean,
+    onFavoriteClick: () -> Unit,
+    onClick: () -> Unit
+) {
     Column(
         modifier = Modifier
             .width(140.dp)
             .clickable { onClick() }
     ) {
-        AsyncImage(
-            model = movie.posterUrl,
-            contentDescription = movie.title,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .clip(RoundedCornerShape(16.dp))
-        )
+        Box(modifier = Modifier.height(200.dp)) {
+            AsyncImage(
+                model = movie.posterUrl,
+                contentDescription = movie.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(16.dp))
+            )
+
+            // Button Favorite Overlay
+            Surface(
+                shape = CircleShape,
+                color = Color.White.copy(alpha = 0.8f),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .size(28.dp)
+                    .clickable { onFavoriteClick() }
+            ) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = "Favorite",
+                    tint = if (isFavorite) Color.Red else Color.Gray,
+                    modifier = Modifier.padding(6.dp)
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = movie.title,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1
-        )
+        Text(text = movie.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 1)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFC107), modifier = Modifier.size(14.dp))
             Spacer(modifier = Modifier.width(4.dp))
@@ -363,72 +409,71 @@ fun FeaturedMovieCard(movie: MovieItem, onClick: () -> Unit) {
 
 // POPULAR ITEM
 @Composable
-fun PopularMovieItem(movie: MovieItem, onClick: () -> Unit) {
+fun PopularMovieItem(
+    movie: MovieItem,
+    isFavorite: Boolean,
+    onFavoriteClick: () -> Unit,
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        // Small Poster
-        AsyncImage(
-            model = movie.posterUrl,
-            contentDescription = movie.title,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .width(100.dp)
-                .height(140.dp)
-                .clip(RoundedCornerShape(12.dp))
-        )
+        // Small Poster with Favorite
+        Box(modifier = Modifier.width(100.dp).height(140.dp)) {
+            AsyncImage(
+                model = movie.posterUrl,
+                contentDescription = movie.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(12.dp))
+            )
+            // Button Favorite Overlay
+            Surface(
+                shape = CircleShape,
+                color = Color.White.copy(alpha = 0.8f),
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(4.dp)
+                    .size(24.dp)
+                    .clickable { onFavoriteClick() }
+            ) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = "Favorite",
+                    tint = if (isFavorite) Color.Red else Color.Gray,
+                    modifier = Modifier.padding(4.dp)
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.width(16.dp))
 
         // Movie Details
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = movie.title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = movie.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(4.dp))
-
-            // Rating Row
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFC107), modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "${movie.rating} ${movie.reviewCount} IMDb",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
+                Text(text = "${movie.rating} ${movie.reviewCount} IMDb", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
             }
-
             Spacer(modifier = Modifier.height(12.dp))
-
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                movie.genres.take(3).forEach { genre ->
-                    GenreChip(genre)
-                }
+                movie.genres.take(3).forEach { genre -> GenreChip(genre) }
             }
-
             Spacer(modifier = Modifier.height(12.dp))
-
-            // Duration Row
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Schedule, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = movie.duration,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Black
-                )
+                Text(text = movie.duration, style = MaterialTheme.typography.bodySmall, color = Color.Black)
             }
         }
     }

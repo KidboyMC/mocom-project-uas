@@ -14,8 +14,8 @@ import com.example.nobarek.data.repository.MovieRepository
 import com.example.nobarek.data.repository.UserRepository
 import com.example.nobarek.navigation.AppNavigation
 import com.example.nobarek.ui.theme.NobaRekTheme
-import com.example.nobarek.viewmodel.MovieViewModelFactory
-import com.example.nobarek.viewmodel.UserViewModelFactory
+import com.example.nobarek.viewmodel.MovieViewModel
+import com.example.nobarek.viewmodel.UserViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,8 +27,8 @@ class MainActivity : ComponentActivity() {
         val userRepository = UserRepository(database.userDao())
         
         // 2. Create ViewModelFactories
-        val movieViewModelFactory = MovieViewModelFactory(movieRepository)
-        val userViewModelFactory = UserViewModelFactory(userRepository)
+        val movieViewModelFactory = MovieViewModel.MovieViewModelFactory(movieRepository)
+        val userViewModelFactory = UserViewModel.UserViewModelFactory(userRepository)
 
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(

@@ -30,8 +30,13 @@ class MovieViewModel(private val repository: MovieRepository) : ViewModel() {
     private val _selectedMovie = MutableStateFlow<Movie?>(null)
     val selectedMovie: StateFlow<Movie?> = _selectedMovie.asStateFlow()
 
+    // ✅ BARU - STATE FOR FAVORITE SCREEN
+    private val _favoriteMovies = MutableStateFlow<List<MovieItem>>(emptyList())
+    val favoriteMovies: StateFlow<List<MovieItem>> = _favoriteMovies.asStateFlow()
+
     init {
         loadHomeData()
+        loadFavoriteMovies()
     }
 
     private fun loadHomeData() {
@@ -40,12 +45,26 @@ class MovieViewModel(private val repository: MovieRepository) : ViewModel() {
             val featured = repository.getFeaturedMovies().map { entity ->
                 MovieItem(entity.id, entity.title, entity.rating, entity.posterUrl, entity.genres.split(","), entity.duration)
             }
+
             _featuredMovies.value = featured
 
             val popular = repository.getPopularMovies().map { entity ->
                 MovieItem(entity.id, entity.title, entity.rating, entity.posterUrl, entity.genres.split(","), entity.duration)
             }
+
             _popularMovies.value = popular
+        }
+    }
+
+    // ✅ BARU - Load Favorite Movies
+    private fun loadFavoriteMovies() {
+        viewModelScope.launch {
+            val favorites = repository.getFavoriteMovies()
+                .distinctBy { it.title }
+                .map { entity ->
+                MovieItem(entity.id, entity.title, entity.rating, entity.posterUrl, entity.genres.split(","), entity.duration)
+            }
+            _favoriteMovies.value = favorites
         }
     }
 
@@ -54,6 +73,7 @@ class MovieViewModel(private val repository: MovieRepository) : ViewModel() {
             val results = repository.searchMovies(query).map { entity ->
                 MovieResult(entity.id, entity.title, entity.rating, entity.posterUrl, entity.genres.split(","))
             }
+
             _searchResults.value = results
         }
     }
@@ -63,11 +83,9 @@ class MovieViewModel(private val repository: MovieRepository) : ViewModel() {
         viewModelScope.launch {
             val featured = repository.getFeaturedMovies()
             val popular = repository.getPopularMovies()
-
             val allCombined = (featured + popular)
                 // Filter by Title
                 .distinctBy { it.title }
-
                 .map { entity ->
                     MovieResult(
                         id = entity.id,
@@ -121,6 +139,7 @@ class MovieViewModel(private val repository: MovieRepository) : ViewModel() {
                 duration = duration,
                 type = "featured"
             )
+
             repository.saveMovie(movie)
             loadHomeData() // Refresh homepage
         }
@@ -135,15 +154,24 @@ class MovieViewModel(private val repository: MovieRepository) : ViewModel() {
             }
         }
     }
-}
 
-// --- FACTORY (Inject Repository to ViewModel) ---
-class MovieViewModelFactory(private val repository: MovieRepository) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(MovieViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return MovieViewModel(repository) as T
+    // ✅ BARU - Toggle Favorite
+    fun toggleFavorite(movieId: Int, isFavorite: Boolean) {
+        viewModelScope.launch {
+            repository.toggleFavorite(movieId, isFavorite)
+            loadFavoriteMovies()  // Refresh favorite list
         }
-        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+
+    // --- FACTORY (Inject Repository to ViewModel) ---
+    class MovieViewModelFactory(private val repository: MovieRepository) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(MovieViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return MovieViewModel(repository) as T
+            }
+
+            throw IllegalArgumentException("Unknown ViewModel class")
+        }
     }
 }

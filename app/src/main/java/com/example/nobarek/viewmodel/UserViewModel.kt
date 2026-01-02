@@ -11,21 +11,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class UserViewModel(private val repository: UserRepository) : ViewModel() {
-    
+
     private val _loggedInUser = MutableStateFlow<UserEntity?>(null)
     val loggedInUser: StateFlow<UserEntity?> = _loggedInUser.asStateFlow()
-    
+
     private val _isAdmin = MutableStateFlow(false)
     val isAdmin: StateFlow<Boolean> = _isAdmin.asStateFlow()
-    
+
     private val _loginError = MutableStateFlow<String?>(null)
     val loginError: StateFlow<String?> = _loginError.asStateFlow()
-    
+
     init {
-        // Seed default users on initialization
         seedDefaultUsers()
     }
-    
+
     private fun seedDefaultUsers() {
         viewModelScope.launch {
             repository.seedDefaultUsers()
@@ -33,8 +32,6 @@ class UserViewModel(private val repository: UserRepository) : ViewModel() {
     }
 
     fun forceLogin(username: String, role: String) {
-        // Kita langsung set state user sebagai login
-        // Asumsikan User adalah data class Anda
         _loggedInUser.value = UserEntity(username = username, password = "", role = role)
         _isAdmin.value = (role == "admin")
     }
@@ -45,7 +42,7 @@ class UserViewModel(private val repository: UserRepository) : ViewModel() {
                 _loginError.value = "Username and password cannot be empty"
                 return@launch
             }
-            
+
             val user = repository.login(username, password)
             if (user != null) {
                 _loggedInUser.value = user
@@ -56,20 +53,20 @@ class UserViewModel(private val repository: UserRepository) : ViewModel() {
             }
         }
     }
-    
+
     fun logout() {
         _loggedInUser.value = null
         _isAdmin.value = false
         _loginError.value = null
     }
-    
+
     fun register(username: String, password: String, role: String = "user", onSuccess: () -> Unit) {
         viewModelScope.launch {
             if (username.isBlank() || password.isBlank()) {
                 _loginError.value = "Username and password cannot be empty"
                 return@launch
             }
-            
+
             val success = repository.register(username, password, role)
             if (success) {
                 _loginError.value = null
@@ -79,19 +76,25 @@ class UserViewModel(private val repository: UserRepository) : ViewModel() {
             }
         }
     }
-    
+
     fun clearError() {
         _loginError.value = null
     }
-}
 
-// Factory
-class UserViewModelFactory(private val repository: UserRepository) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(UserViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return UserViewModel(repository) as T
+    // ✅ BARU - Get current logged in user
+    fun getCurrentUser(): UserEntity? {
+        return _loggedInUser.value
+    }
+
+    // Factory
+    class UserViewModelFactory(private val repository: UserRepository) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(UserViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return UserViewModel(repository) as T
+            }
+
+            throw IllegalArgumentException("Unknown ViewModel class")
         }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
